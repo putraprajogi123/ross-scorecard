@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<title>ROSS Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a1a0f;--bg2:#0f2418;--bg3:#163520;
+  --teal:#1a8a5a;--teal2:#2ecc71;
+  --gold:#f5a623;--green:#2ecc71;--red:#e74c3c;
+  --orange:#e67e22;--purple:#9b59b6;
+  --text:#e8f4ee;--text2:#7abf96;
+  --border:#1a3d28;--cell:#0c1f12;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Tahoma,sans-serif;min-height:100vh;}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0a1a0f,#0e2418);border-bottom:2px solid var(--gold);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.hdr-icon{width:36px;height:36px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.hdr-name{font-size:16px;font-weight:700;color:var(--gold);}
+.hdr-sub{font-size:10px;color:var(--text2);}
+.hdr-badge{background:rgba(245,166,35,.15);border:1px solid var(--gold);color:var(--gold);font-size:10px;padding:3px 10px;border-radius:10px;}
+
+/* TABS */
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);}
+.tab{flex:1;padding:12px 6px;text-align:center;font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;letter-spacing:.3px;}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);background:rgba(245,166,35,.05);}
+
+/* CONTENT */
+.page{display:none;padding:14px 14px 80px;}
+.page.active{display:block;}
+
+/* SECTION */
+.sec-title{font-size:11px;color:var(--teal2);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;margin-top:20px;}
+.sec-title:first-child{margin-top:4px;}
+
+/* FORM */
+label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:600;}
+input[type=text],input[type=date],input[type=number],select,textarea{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);padding:11px 12px;border-radius:8px;
+  font-size:13px;margin-bottom:12px;
+  -webkit-appearance:none;appearance:none;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
+option{background:var(--bg2);}
+textarea{resize:vertical;min-height:60px;}
+
+/* PESERTA PICKER */
+.picker-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.picker-panel{background:var(--cell);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.picker-panel-hdr{background:var(--bg3);padding:7px 10px;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);}
+.picker-search{width:100%;background:var(--bg3);border:none;border-bottom:1px solid var(--border);color:var(--text);padding:7px 10px;font-size:12px;}
+.picker-search:focus{outline:none;background:#0e2418;}
+.picker-list{max-height:200px;overflow-y:auto;}
+.picker-item{padding:8px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;transition:background .15s;}
+.picker-item:hover{background:rgba(26,138,90,.12);}
+.picker-item:last-child{border:none;}
+.picker-item .pi-name{color:var(--text);font-weight:600;flex:1;}
+.picker-item .pi-hcp{color:var(--text2);font-size:11px;margin:0 6px;}
+.picker-item .pi-btn{background:var(--teal);color:#fff;border:none;border-radius:4px;width:22px;height:22px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.picker-item.added{opacity:.4;pointer-events:none;}
+.selected-item{padding:7px 10px;font-size:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.selected-item:last-child{border:none;}
+.selected-item .si-name{flex:1;color:var(--text);font-weight:600;font-size:12px;}
+.selected-item .si-hcp{background:var(--bg3);border:1px solid var(--border);color:var(--text);width:44px;padding:3px 4px;border-radius:4px;font-size:12px;text-align:center;}
+.selected-item .si-rm{background:none;border:none;color:var(--red);font-size:14px;cursor:pointer;padding:0 2px;}
+
+/* BUTTONS */
+.btn{width:100%;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;transition:opacity .2s;}
+.btn:active{opacity:.8;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-gold{background:var(--gold);color:#0a1a0f;}
+.btn-teal{background:var(--teal);color:#fff;}
+.btn-red{background:var(--red);color:#fff;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2);}
+
+/* TOURNAMENT CARDS */
+.trn-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
+.trn-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.trn-name{font-size:15px;font-weight:700;color:var(--gold);}
+.trn-date{font-size:11px;color:var(--text2);}
+.status-badge{font-size:10px;padding:3px 10px;border-radius:10px;font-weight:700;}
+.status-aktif{background:rgba(46,204,113,.15);color:var(--green);border:1px solid var(--green);}
+.status-selesai{background:rgba(122,191,150,.1);color:var(--text2);border:1px solid var(--border);}
+.trn-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text2);margin-bottom:10px;}
+.trn-meta b{color:var(--teal2);}
+.peserta-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.chip{background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:11px;padding:3px 8px;border-radius:6px;}
+.chip b{color:var(--text);}
+.trn-actions{display:flex;gap:8px;}
+.trn-actions button{flex:1;padding:8px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;}
+.btn-close-trn{background:rgba(231,76,60,.15);color:var(--red);border:1px solid var(--red)!important;}
+.btn-view-lb{background:rgba(26,138,90,.15);color:var(--teal2);border:1px solid var(--teal)!important;}
+
+/* ANGGOTA */
+.anggota-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.anggota-info .a-name{font-size:14px;font-weight:700;color:var(--text);}
+.anggota-info .a-meta{font-size:11px;color:var(--text2);margin-top:3px;}
+.hcp-badge{background:rgba(155,89,182,.2);border:1px solid var(--purple);color:var(--purple);font-size:13px;font-weight:700;padding:6px 12px;border-radius:8px;min-width:54px;text-align:center;}
+
+/* LOADING & TOAST */
+#loading{position:fixed;inset:0;background:rgba(10,26,15,.95);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:9999;font-size:14px;color:var(--teal2);}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg2);color:var(--text);padding:10px 20px;border-radius:20px;font-size:13px;border:1px solid var(--gold);display:none;z-index:9999;white-space:nowrap;max-width:90vw;text-align:center;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:20px;}
+.modal-title{font-size:16px;font-weight:700;color:var(--gold);margin-bottom:16px;}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:40px 20px;color:var(--text2);}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+.empty-text{font-size:14px;}
+
+/* INFO CARD */
+.info-row{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.info-key{font-size:12px;color:var(--text2);}
+.info-val{font-size:14px;font-weight:700;color:var(--teal2);}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div><div>Memuat Admin ROSS...</div></div>
+<div id="toast"></div>
+
+<!-- MODAL BUAT TOURNAMENT -->
+<div class="modal-overlay" id="modalTrn">
+  <div class="modal">
+    <div class="modal-title">🏆 Buat Tournament Baru</div>
+
+    <label>Nama Tournament</label>
+    <input type="text" id="trnNama" placeholder="Contoh: ROSS Cup 2026 - SS Region">
+
+    <label>Tanggal Pelaksanaan</label>
+    <input type="date" id="trnTanggal">
+
+    <label>Region</label>
+    <select id="trnRegion">
+      <option value="SS">SS — South Sumatera</option>
+      <option value="NS">NS — North Sumatera</option>
+      <option value="BG">BG — Bengkulu Region</option>
+      <option value="HO">HO — Head Office</option>
+    </select>
+
+    <label>Tee Box</label>
+    <select id="trnTeeBox">
+      <option value="Full Round">Full Round — 18 Hole</option>
+      <option value="1st Nine">1st Nine — Hole 1–9</option>
+      <option value="2nd Nine">2nd Nine — Hole 10–18</option>
+    </select>
+
+    <label>Kategori Peserta</label>
+    <select id="trnGender" onchange="renderPickerList()">
+      <option value="Men's">👨 Men's</option>
+      <option value="Ladies">👩 Ladies</option>
+      <option value="Open">🌐 Open (Campuran)</option>
+    </select>
+
+    <div class="sec-title" style="margin-top:16px;">Daftar Peserta</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">Klik ＋ untuk tambah peserta. HCP bisa diubah di kolom kanan.</div>
+
+    <div class="picker-wrap">
+      <div class="picker-panel">
+        <div class="picker-panel-hdr">👥 Anggota</div>
+        <input class="picker-search" type="text" id="searchPeserta"
+          placeholder="🔍 Cari..." oninput="filterPickerList()">
+        <div class="picker-list" id="pickerList"></div>
+      </div>
+      <div class="picker-panel">
+        <div class="picker-panel-hdr">✅ Dipilih (<span id="pesertaCount">0</span>)</div>
+        <div class="picker-list" id="selectedList">
+          <div style="padding:12px;font-size:11px;color:var(--text2);text-align:center;">Belum ada</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-gold" onclick="submitTournament()">✅ Buat Tournament</button>
+    <button class="btn btn-outline" onclick="closeModal('modalTrn')">Batal</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-icon">⚙️</div>
+    <div>
+      <div class="hdr-name">ROSS Admin</div>
+      <div class="hdr-sub">ROSS Golf Course · SS Region</div>
+    </div>
+  </div>
+  <div class="hdr-badge" id="hdrBadge">loading...</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('tournament')">🏆 Tournament</div>
+  <div class="tab" onclick="switchTab('anggota')">👥 Anggota</div>
+  <div class="tab" onclick="switchTab('info')">ℹ️ Info</div>
+</div>
+
+<!-- PAGE: TOURNAMENT -->
+<div id="page-tournament" class="page active">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div class="sec-title" style="margin:0;">Daftar Tournament</div>
+    <button class="btn btn-gold" style="width:auto;padding:8px 14px;margin:0;font-size:12px;" onclick="openModal('modalTrn')">
+      ＋ Buat Baru
+    </button>
+  </div>
+  <div id="trnList"></div>
+</div>
+
+<!-- PAGE: ANGGOTA -->
+<div id="page-anggota" class="page">
+  <div class="sec-title">Data Anggota ROSS</div>
+  <div id="anggotaList"></div>
+</div>
+
+<!-- PAGE: INFO -->
+<div id="page-info" class="page">
+  <div class="sec-title">Informasi Sistem</div>
+  <div id="infoContent"></div>
+  <div class="sec-title">Link Aplikasi</div>
+  <div class="info-row">
+    <div>
+      <div class="info-key">Scorecard (Input Score)</div>
+      <div style="font-size:11px;color:var(--teal2);word-break:break-all;" id="linkScorecard">index.html</div>
+    </div>
+  </div>
+  <div class="info-row">
+    <div>
+      <div class="info-key">Leaderboard (Live TV)</div>
+      <div style="font-size:11px;color:var(--teal2);word-break:break-all;" id="linkLeaderboard">leaderboard.html</div>
+    </div>
+  </div>
+  <div class="info-row">
+    <div>
+      <div class="info-key">Admin Panel</div>
+      <div style="font-size:11px;color:var(--teal2);word-break:break-all;" id="linkAdmin">admin.html</div>
+    </div>
+  </div>
+  <div class="sec-title">Apps Script API</div>
+  <div class="info-row">
+    <div>
+      <div class="info-key">API URL</div>
+      <div style="font-size:10px;color:var(--text2);word-break:break-all;" id="apiUrlDisplay"></div>
+    </div>
+  </div>
+  <button class="btn btn-teal" style="margin-top:8px;" onclick="testApi()">🔌 Test Koneksi API</button>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbw3kg6NrQ6QfmoAk6MRBWqlUhv5dTDFXlxFTC54nrM_cTZmC0pQmi0oNN2ogcXsiSzdUw/exec';
+
+let masterData   = null;
+let pesertaAdded = [];
+
+window.onload = async () => {
+  document.getElementById('trnTanggal').value = todayStr();
+  document.getElementById('apiUrlDisplay').textContent = API_URL;
+
+  const base = window.location.href.replace('admin.html','');
+  document.getElementById('linkScorecard').textContent   = base + 'index.html';
+  document.getElementById('linkLeaderboard').textContent = base + 'leaderboard.html';
+  document.getElementById('linkAdmin').textContent       = base + 'admin.html';
+
+  try {
+    const res  = await fetch(API_URL + '?action=getMasterData', { redirect:'follow' });
+    masterData = await res.json();
+    if (masterData.status !== 'ok') throw new Error(masterData.message);
+    document.getElementById('hdrBadge').textContent = masterData.anggota.length + ' anggota';
+    renderTournaments();
+    renderAnggota();
+    renderInfo();
+  } catch(e) {
+    showToast('⚠️ Gagal memuat: ' + e.message, 4000);
+    document.getElementById('hdrBadge').textContent = 'Offline';
+  }
+  document.getElementById('loading').style.display = 'none';
+};
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['tournament','anggota','info'][i] === name);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+}
+
+function renderTournaments() {
+  const list = document.getElementById('trnList');
+  const trns = masterData?.tournaments || [];
+
+  if (!trns.length) {
+    list.innerHTML = `<div class="empty">
+      <div class="empty-icon">🏌️</div>
+      <div class="empty-text">Belum ada tournament.<br>Klik <b>＋ Buat Baru</b> untuk memulai.</div>
+    </div>`;
+    return;
+  }
+
+  const sorted = [...trns].sort((a,b) => {
+    if (a.Status === 'AKTIF' && b.Status !== 'AKTIF') return -1;
+    if (a.Status !== 'AKTIF' && b.Status === 'AKTIF') return 1;
+    return 0;
+  });
+
+  list.innerHTML = sorted.map(t => {
+    const peserta = Array.isArray(t.Peserta) ? t.Peserta : [];
+    const chips = peserta.map(p => {
+      const icon = (p.gelar || '') === 'Mrs.' ? '👩' : '👨';
+      return `<div class="chip">${icon} <b>${escHtml(p.gelar || '')} ${escHtml(p.nama)}</b> · HCP ${p.hcp}</div>`;
+    }).join('');
+
+    return `
+    <div class="trn-card">
+      <div class="trn-head">
+        <div>
+          <div class="trn-name">${escHtml(t.Nama)}</div>
+          <div class="trn-date">📅 ${fmtDate(t.Tanggal)}</div>
+        </div>
+        <div class="status-badge ${t.Status === 'AKTIF' ? 'status-aktif' : 'status-selesai'}">
+          ${t.Status}
+        </div>
+      </div>
+      <div class="trn-meta">
+        <span>🌍 Region: <b>${t.Region}</b></span>
+        <span>⛳ TeeBox: <b>${t.TeeBox}</b></span>
+        <span>⛳ ${t.Holes} Hole</span>
+        <span>${t.Gender === "Ladies" ? '👩' : t.Gender === "Men's" ? '👨' : '🌐'} <b>${t.Gender || 'Open'}</b></span>
+        <span>👥 <b>${peserta.length}</b> peserta</span>
+      </div>
+      ${chips ? `<div class="peserta-chips">${chips}</div>` : ''}
+      <div class="trn-actions">
+        ${t.Status === 'AKTIF'
+          ? `<button class="btn-close-trn" onclick="closeTournament('${escHtml(t.ID)}','${escHtml(t.Nama)}')">🔒 Tutup Tournament</button>`
+          : ''}
+        <button class="btn-view-lb" onclick="viewLeaderboard('${escHtml(t.ID)}')">📊 Leaderboard</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAnggota() {
+  const list    = document.getElementById('anggotaList');
+  const anggota = masterData?.anggota || [];
+
+  if (!anggota.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Data anggota kosong.</div></div>`;
+    return;
+  }
+
+  const sorted = [...anggota].sort((a,b) => {
+    const ga = (a['Gelar'] || '').trim();
+    const gb = (b['Gelar'] || '').trim();
+    if (ga !== gb) return ga.localeCompare(gb);
+    return a.Nama.localeCompare(b.Nama);
+  });
+
+  list.innerHTML = sorted.map((a, i) => {
+    const hcp    = (a.Handicap !== undefined && a.Handicap !== '') ? a.Handicap : '-';
+    const rounds = a.TotalRounds || 0;
+    const ou     = a['Operating Unit'] || a.OU || '';
+    const gelar  = (a['Gelar'] || '').trim();
+    const icon   = gelar === 'Mrs.' ? '👩' : '👨';
+    return `
+    <div class="anggota-card">
+      <div class="anggota-info">
+        <div class="a-name">${icon} <span style="color:var(--text2);font-size:12px;">${escHtml(gelar)}</span> ${escHtml(a.Nama)}</div>
+        <div class="a-meta">
+          ${ou ? '🏢 ' + escHtml(ou) + ' · ' : ''}
+          🎯 ${rounds} round dimainkan
+        </div>
+      </div>
+      <div class="hcp-badge">${hcp}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderInfo() {
+  const trns    = masterData?.tournaments || [];
+  const anggota = masterData?.anggota     || [];
+  const aktif   = trns.filter(t => t.Status === 'AKTIF').length;
+
+  document.getElementById('infoContent').innerHTML = `
+    <div class="info-row">
+      <div class="info-key">Total Anggota</div>
+      <div class="info-val">${anggota.length} orang</div>
+    </div>
+    <div class="info-row">
+      <div class="info-key">Total Tournament</div>
+      <div class="info-val">${trns.length} tournament</div>
+    </div>
+    <div class="info-row">
+      <div class="info-key">Tournament Aktif</div>
+      <div class="info-val" style="color:var(--green);">${aktif} aktif</div>
+    </div>`;
+}
+
+function openModal(id) {
+  pesertaAdded = [];
+  document.getElementById('searchPeserta').value = '';
+  renderPickerList();
+  renderSelectedList();
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function renderPickerList() {
+  const q      = (document.getElementById('searchPeserta')?.value || '').toLowerCase();
+  const gender = document.getElementById('trnGender')?.value || 'Open';
+  const list   = document.getElementById('pickerList');
+  if (!masterData?.anggota) {
+    list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text2);">Data tidak tersedia</div>';
+    return;
+  }
+
+  const filtered = masterData.anggota
+    .filter(a => {
+      const gelar = (a['Gelar'] || '').toString().trim();
+      if (gender === "Men's")  return gelar === 'Mr.';
+      if (gender === 'Ladies') return gelar === 'Mrs.';
+      return true;
+    })
+    .filter(a => !q || a.Nama.toLowerCase().includes(q))
+    .sort((a,b) => a.Nama.localeCompare(b.Nama));
+
+  if (!filtered.length) {
+    list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text2);">Tidak ditemukan</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(a => {
+    const hcp   = (a.Handicap !== undefined && a.Handicap !== '') ? a.Handicap : 0;
+    const gelar = (a['Gelar'] || '').trim();
+    const added = pesertaAdded.find(p => p.nama === a.Nama && p.gelar === gelar);
+    const icon  = gelar === 'Mrs.' ? '👩' : '👨';
+    return `<div class="picker-item ${added ? 'added' : ''}">
+      <span class="pi-name">${icon} <span style="color:var(--text2);font-size:11px;">${escHtml(gelar)}</span> ${escHtml(a.Nama)}</span>
+      <span class="pi-hcp">HCP ${hcp}</span>
+      <button class="pi-btn" onclick="addPeserta('${escHtml(a.Nama)}','${escHtml(gelar)}',${hcp})">＋</button>
+    </div>`;
+  }).join('');
+}
+
+function filterPickerList() { renderPickerList(); }
+
+function renderSelectedList() {
+  const list = document.getElementById('selectedList');
+  document.getElementById('pesertaCount').textContent = pesertaAdded.length;
+
+  if (!pesertaAdded.length) {
+    list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text2);text-align:center;">Belum ada</div>';
+    return;
+  }
+
+  list.innerHTML = pesertaAdded.map((p,i) => {
+    const icon = (p.gelar || '') === 'Mrs.' ? '👩' : '👨';
+    return `
+    <div class="selected-item">
+      <span style="color:var(--gold);font-size:11px;font-weight:700;min-width:16px;">${i+1}</span>
+      <span class="si-name">${icon} <span style="color:var(--text2);font-size:10px;">${escHtml(p.gelar||'')}</span> ${escHtml(p.nama)}</span>
+      <input class="si-hcp" type="number" min="0" max="36" value="${p.hcp}"
+        onchange="updateHcp(${i},this.value)" title="HCP">
+      <button class="si-rm" onclick="removePeserta(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addPeserta(nama, gelar, hcp) {
+  if (pesertaAdded.find(p => p.nama === nama && p.gelar === gelar)) return;
+  pesertaAdded.push({ nama, gelar: gelar || '', hcp: parseInt(hcp) || 0 });
+  renderPickerList();
+  renderSelectedList();
+}
+
+function removePeserta(i) {
+  pesertaAdded.splice(i, 1);
+  renderPickerList();
+  renderSelectedList();
+}
+
+function updateHcp(i, val) {
+  pesertaAdded[i].hcp = parseInt(val) || 0;
+}
+
+async function submitTournament() {
+  const nama    = document.getElementById('trnNama').value.trim();
+  const tanggal = document.getElementById('trnTanggal').value;
+  const region  = document.getElementById('trnRegion').value;
+  const teeBox  = document.getElementById('trnTeeBox').value;
+
+  if (!nama)                { showToast('⚠️ Isi nama tournament'); return; }
+  if (!tanggal)             { showToast('⚠️ Isi tanggal'); return; }
+  if (!pesertaAdded.length) { showToast('⚠️ Tambah minimal 1 peserta'); return; }
+
+  const btn = document.querySelector('#modalTrn .btn-gold');
+  btn.disabled = true;
+  btn.textContent = '⏳ Menyimpan...';
+
+  try {
+    const res = await fetch(API_URL, {
+      method:  'POST',
+      redirect:'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action:  'createTournament',
+        nama, tanggal, region, teeBox,
+        gender:  document.getElementById('trnGender').value,
+        peserta: pesertaAdded
+      })
+    });
+    const result = await res.json();
+    if (result.status !== 'ok') throw new Error(result.message);
+
+    showToast('✅ ' + result.message);
+    closeModal('modalTrn');
+
+    const res2 = await fetch(API_URL + '?action=getMasterData', { redirect:'follow' });
+    masterData  = await res2.json();
+    renderTournaments();
+    renderInfo();
+
+  } catch(e) {
+    showToast('❌ Gagal: ' + e.message, 4000);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '✅ Buat Tournament';
+}
+
+async function closeTournament(id, nama) {
+  if (!confirm(`Tutup tournament "${nama}"?\nData score tidak akan terhapus.`)) return;
+
+  try {
+    const res = await fetch(API_URL, {
+      method:  'POST',
+      redirect:'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:    JSON.stringify({ action: 'closeTournament', tournamentId: id })
+    });
+    const result = await res.json();
+    if (result.status !== 'ok') throw new Error(result.message);
+
+    showToast('✅ Tournament ditutup');
+    const res2 = await fetch(API_URL + '?action=getMasterData', { redirect:'follow' });
+    masterData  = await res2.json();
+    renderTournaments();
+    renderInfo();
+
+  } catch(e) {
+    showToast('❌ Gagal: ' + e.message, 4000);
+  }
+}
+
+function viewLeaderboard(tournamentId) {
+  const base = window.location.href.replace('admin.html','');
+  window.open(base + 'leaderboard.html?tid=' + tournamentId, '_blank');
+}
+
+async function testApi() {
+  showToast('⏳ Testing koneksi...', 5000);
+  try {
+    const res    = await fetch(API_URL + '?action=ping', { redirect:'follow' });
+    const result = await res.json();
+    if (result.status === 'ok') showToast('✅ API OK · ' + result.time, 3000);
+    else showToast('⚠️ API Error: ' + result.message, 3000);
+  } catch(e) {
+    showToast('❌ Koneksi gagal: ' + e.message, 3000);
+  }
+}
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function fmtDate(d) {
+  if (!d || d === 0 || d === '') return '-';
+  if (typeof d === 'number') {
+    const date = new Date(Math.round((d - 25569) * 86400 * 1000));
+    if (!isNaN(date.getTime())) {
+      const m = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      return `${date.getDate()} ${m[date.getMonth()]} ${date.getFullYear()}`;
+    }
+  }
+  const m = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const str = d.toString();
+  const match = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return `${parseInt(match[3])} ${m[parseInt(match[2])-1]} ${match[1]}`;
+  }
+  return str;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, dur) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.display='none'; }, dur || 2500);
+}
+</script>
+</body>
+</html>
