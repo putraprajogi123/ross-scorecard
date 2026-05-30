@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<title>ROSS Live Leaderboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#030e06;
+  --bg2:#071a0c;
+  --bg3:#0c2514;
+  --teal:#00e676;
+  --teal2:#00c853;
+  --gold:#ffd700;
+  --gold2:#ffaa00;
+  --green:#00e676;
+  --red:#ff4444;
+  --silver:#c0c0c0;
+  --bronze:#cd7f32;
+  --text:#ffffff;
+  --text2:#7abf96;
+  --border:#0e2d18;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Rajdhani',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(0,230,118,.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(255,215,0,.04) 0%, transparent 60%);
+  pointer-events:none;z-index:0;
+}
+
+/* HEADER */
+.hdr{
+  background:linear-gradient(135deg,#030e06 0%,#071a0c 50%,#030e06 100%);
+  border-bottom:2px solid var(--teal);
+  padding:14px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;z-index:10;
+}
+.hdr::after{
+  content:'';position:absolute;bottom:-4px;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+.hdr-left{display:flex;align-items:center;gap:16px;}
+.hdr-logo{
+  width:56px;height:56px;
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;
+  box-shadow:0 0 20px rgba(0,230,118,.4);
+}
+.hdr-title{font-family:'Bebas Neue',cursive;font-size:36px;color:var(--gold);letter-spacing:3px;line-height:1;}
+.hdr-sub{font-size:13px;color:var(--teal);letter-spacing:2px;font-weight:600;}
+.hdr-right{text-align:right;}
+.hdr-tournament{font-family:'Bebas Neue';font-size:22px;color:var(--text);letter-spacing:2px;}
+.hdr-meta{font-size:12px;color:var(--text2);letter-spacing:1px;}
+.live-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,68,68,.15);border:1px solid var(--red);
+  color:var(--red);font-size:12px;font-weight:700;
+  padding:4px 12px;border-radius:20px;letter-spacing:2px;
+  margin-top:4px;
+}
+.live-dot{width:8px;height:8px;background:var(--red);border-radius:50%;animation:pulse 1.2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* REFRESH TIMER */
+.refresh-bar{height:3px;background:var(--border);position:relative;overflow:hidden;}
+.refresh-progress{
+  height:100%;
+  background:linear-gradient(90deg,var(--teal),var(--gold));
+  width:100%;
+  animation:countdown 30s linear infinite;
+  transform-origin:left;
+}
+@keyframes countdown{from{width:100%;}to{width:0%;}}
+
+/* MAIN LAYOUT */
+.main{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  padding:20px 24px 24px;
+  position:relative;z-index:1;
+}
+
+/* PANEL */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.panel-hdr{
+  padding:12px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.panel-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:2px;}
+.panel-title.gross{color:var(--gold);}
+.panel-title.nett{color:var(--green);}
+.panel-sub{font-size:11px;color:var(--text2);letter-spacing:1px;font-weight:600;}
+.panel-count{font-size:12px;color:var(--text2);}
+
+/* RANK ROWS */
+.rank-row{border-bottom:1px solid var(--border);transition:background .2s;}
+.rank-row:last-child{border:none;}
+.rank-summary{display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;}
+.rank-summary:hover{background:rgba(0,230,118,.04);}
+
+/* RANK NUMBER */
+.rank-num{font-family:'Bebas Neue';font-size:28px;min-width:36px;text-align:center;line-height:1;}
+.rank-1 .rank-num{color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.5);}
+.rank-2 .rank-num{color:var(--silver);}
+.rank-3 .rank-num{color:var(--bronze);}
+.rank-4 .rank-num,.rank-5 .rank-num{color:var(--text2);}
+.rank-other .rank-num{color:var(--border);font-size:18px;}
+
+/* PHOTO */
+.player-photo{width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--border);background:var(--bg3);}
+.player-photo-placeholder{width:42px;height:42px;border-radius:50%;background:var(--bg3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+
+/* PLAYER INFO */
+.player-info{flex:1;min-width:0;}
+.player-name{font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+.player-gelar{font-size:11px;color:var(--teal);font-weight:600;}
+.player-ou{font-size:11px;color:var(--text2);}
+
+/* SCORES */
+.score-group{display:flex;gap:12px;flex-shrink:0;}
+.score-item{text-align:center;}
+.score-val{font-family:'Bebas Neue';font-size:24px;line-height:1;}
+.score-lbl{font-size:9px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;}
+.score-gross .score-val{color:var(--gold);}
+.score-nett  .score-val{color:var(--green);}
+.score-hcp   .score-val{color:var(--text2);}
+
+/* EXPAND */
+.expand-arr{color:var(--text2);font-size:12px;transition:transform .2s;flex-shrink:0;}
+.expanded .expand-arr{transform:rotate(180deg);}
+
+/* HOLES DETAIL */
+.holes-detail{display:none;padding:10px 16px 14px;border-top:1px solid var(--border);background:rgba(0,0,0,.3);}
+.holes-detail.open{display:block;}
+.holes-grid{display:flex;gap:3px;flex-wrap:nowrap;overflow-x:auto;}
+.hole-cell{text-align:center;min-width:24px;flex-shrink:0;background:var(--bg3);border-radius:4px;padding:2px 1px;border:1px solid var(--border);}
+.hole-num{font-size:8px;color:var(--text2);font-weight:600;}
+.hole-score{font-size:13px;font-weight:700;line-height:1.2;}
+.hole-par{font-size:8px;color:var(--text2);}
+.h-eagle{color:#FFAB91;font-weight:900;}
+.h-birdie{color:#69F0AE;}
+.h-par{color:#40C4FF;}
+.h-bogey{color:#B0BEC5;}
+.h-dbogey{color:#FF1744;}
+.holes-sub{display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--text2);}
+.holes-sub b{color:var(--text);}
+
+/* TOP 5 */
+.top5-badge{font-size:9px;color:var(--teal);background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.2);padding:1px 6px;border-radius:4px;letter-spacing:1px;font-weight:700;}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text2);}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+
+/* FOOTER */
+.footer{text-align:center;padding:12px;font-size:11px;color:var(--text2);border-top:1px solid var(--border);letter-spacing:1px;position:relative;z-index:1;}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:9999;}
+.spinner{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-family:'Bebas Neue';font-size:24px;color:var(--teal);letter-spacing:3px;}
+
+/* LAST UPDATE */
+.last-update{font-size:11px;color:var(--text2);text-align:center;padding:6px;letter-spacing:1px;}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">Loading Leaderboard...</div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">⛳</div>
+    <div>
+      <div class="hdr-title">ROSS Golf Course</div>
+      <div class="hdr-sub">ROSS LIVE LEADERBOARD</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-tournament" id="trnName">—</div>
+    <div class="hdr-meta" id="trnMeta">—</div>
+    <div id="liveBadge" class="live-badge"><span class="live-dot"></span> LIVE</div>
+    <div id="finalBadge" style="display:none;background:rgba(245,166,35,.15);border:1px solid var(--gold);color:var(--gold);font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:2px;margin-top:4px;">🏆 FINAL RESULT</div>
+  </div>
+</div>
+
+<!-- REFRESH BAR -->
+<div class="refresh-bar"><div class="refresh-progress" id="refreshBar"></div></div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- GROSS -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div>
+        <div class="panel-title gross">🏆 Gross Score</div>
+        <div class="panel-sub">Lower is better · Stroke Play</div>
+      </div>
+      <div class="panel-count" id="grossCount"></div>
+    </div>
+    <div id="grossList">
+      <div class="empty-state"><div class="empty-icon">🏌️</div>Memuat data...</div>
+    </div>
+  </div>
+
+  <!-- NETT -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div>
+        <div class="panel-title nett">🎯 Nett Score</div>
+        <div class="panel-sub">Gross − Handicap</div>
+      </div>
+      <div class="panel-count" id="nettCount"></div>
+    </div>
+    <div id="nettList">
+      <div class="empty-state"><div class="empty-icon">🏌️</div>Memuat data...</div>
+    </div>
+  </div>
+</div>
+
+<div class="last-update" id="lastUpdate"></div>
+<div style="text-align:center;padding:6px;">
+  <button id="btnPrintScore" onclick="printTournamentScore()"
+    style="display:none;background:var(--gold);color:#030e06;border:none;padding:8px 20px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;">
+    📄 Print Score
+  </button>
+</div>
+
+<div class="footer">
+  ROSS GOLF COURSE · LAPANGAN GOLF PT.TOLAN TIGA INDONESIA SS REGION · AUTO-REFRESH 30 DETIK
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbw3kg6NrQ6QfmoAk6MRBWqlUhv5dTDFXlxFTC54nrM_cTZmC0pQmi0oNN2ogcXsiSzdUw/exec';
+
+const PAR_H = {
+  1:4,  2:4,  3:3,  4:4,  5:4,  6:5,  7:4,  8:5,  9:3,
+  10:4, 11:4, 12:3, 13:4, 14:4, 15:5, 16:4, 17:5, 18:3
+};
+
+const MEDALS = ['🥇','🥈','🥉','4','5'];
+
+let anggotaMap    = {};
+let tournamentId  = '';
+let tournamentData = null;
+let isFinished    = false;
+
+window.onload = async () => {
+  const params = new URLSearchParams(window.location.search);
+  tournamentId = params.get('tid') || '';
+
+  await loadData();
+  document.getElementById('loading').style.display = 'none';
+
+  setInterval(() => {
+    if (isFinished) return;
+    resetRefreshBar();
+    loadData();
+  }, 30000);
+};
+
+function resetRefreshBar() {
+  const bar = document.getElementById('refreshBar');
+  bar.style.animation = 'none';
+  bar.offsetHeight;
+  bar.style.animation = 'countdown 30s linear infinite';
+}
+
+async function loadData() {
+  try {
+    const [masterRes, lbRes] = await Promise.all([
+      fetch(API_URL + '?action=getMasterData', { redirect:'follow' }),
+      fetch(API_URL + '?action=getLeaderboard&tournamentId=' + encodeURIComponent(tournamentId), { redirect:'follow' })
+    ]);
+
+    const master = await masterRes.json();
+    const lb     = await lbRes.json();
+
+    if (master.status === 'ok') {
+      anggotaMap = {};
+      (master.anggota || []).forEach(a => {
+        const key = (a.Nama || '') + '|' + (a['Gelar'] || '');
+        anggotaMap[key] = {
+          foto:  a['Foto'] || '',
+          ou:    a['Operating Unit'] || '',
+          gelar: (a['Gelar'] || '').trim()
+        };
+      });
+
+      const tournaments = master.tournaments || [];
+      if (tournamentId) {
+        tournamentData = tournaments.find(t => t.ID === tournamentId);
+      } else {
+        tournamentData = tournaments.filter(t => t.Status === 'AKTIF').slice(-1)[0];
+      }
+      updateHeader();
+    }
+
+    if (lb.status === 'ok') {
+      renderGross(lb.gross || []);
+      renderNett(lb.nett   || []);
+      document.getElementById('lastUpdate').textContent = 'Last update: ' + fmtTime(lb.updatedAt);
+
+      const topN = Math.min(5, (lb.gross||[]).length);
+      for (let i = 0; i < topN; i++) {
+        setTimeout(() => {
+          toggleHoles('grow_' + i, 'gross', i);
+          toggleHoles('nrow_' + i, 'nett',  i);
+        }, i * 200);
+      }
+    }
+
+  } catch(e) {
+    console.error('Load error:', e);
+  }
+}
+
+function updateHeader() {
+  if (tournamentData) {
+    document.getElementById('trnName').textContent = tournamentData.Nama || 'ROSS Tournament';
+    const region = tournamentData.Region || '';
+    const teeBox = tournamentData.TeeBox || '';
+    const gender = tournamentData.Gender || '';
+    const tgl    = tournamentData.Tanggal ? fmtDateStr(tournamentData.Tanggal) : '';
+    document.getElementById('trnMeta').textContent =
+      [region, teeBox, gender, tgl].filter(Boolean).join(' · ');
+
+    isFinished = tournamentData.Status === 'SELESAI';
+
+    if (isFinished) {
+      document.getElementById('liveBadge').style.display  = 'none';
+      document.getElementById('finalBadge').style.display = 'block';
+      document.querySelector('.refresh-bar').style.display = 'none';
+      document.getElementById('btnPrintScore').style.display = 'inline-block';
+      document.getElementById('lastUpdate').textContent = '🏆 Tournament selesai · Hasil final';
+    } else {
+      document.getElementById('liveBadge').style.display  = 'flex';
+      document.getElementById('finalBadge').style.display = 'none';
+      document.querySelector('.refresh-bar').style.display = 'block';
+      document.getElementById('btnPrintScore').style.display = 'none';
+    }
+  } else {
+    document.getElementById('trnName').textContent = 'All Rounds';
+    document.getElementById('trnMeta').textContent = 'Semua data latihan & tournament';
+  }
+}
+
+function renderGross(players) {
+  const list = document.getElementById('grossList');
+  document.getElementById('grossCount').textContent = players.length + ' pemain';
+
+  if (!players.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🏌️</div>Belum ada data score</div>`;
+    return;
+  }
+
+  list.innerHTML = players.map((p, i) => {
+    const isTop5    = i < 5;
+    const rankClass = i < 3 ? `rank-${i+1}` : i < 5 ? `rank-${i+1}` : 'rank-other';
+    const anggota   = anggotaMap[p.pemain + '|' + (p.gelar||'')] || anggotaMap[p.pemain + '|Mr.'] || anggotaMap[p.pemain + '|Mrs.'] || {};
+    const foto      = anggota.foto || '';
+    const ou        = anggota.ou   || '';
+    const gelar     = p.gelar || anggota.gelar || '';
+    const icon      = gelar === 'Mrs.' ? '👩' : '👨';
+
+    return `
+    <div class="rank-row ${rankClass}" id="grow_${i}">
+      <div class="rank-summary" onclick="toggleHoles('grow_${i}','gross',${i})">
+        <div class="rank-num">${i < 3 ? MEDALS[i] : i+1}</div>
+        ${foto
+          ? `<img class="player-photo" src="${escHtml(foto)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+             <div class="player-photo-placeholder" style="display:none;">${icon}</div>`
+          : `<div class="player-photo-placeholder">${icon}</div>`
+        }
+        <div class="player-info">
+          <div class="player-name">
+            <span class="player-gelar">${escHtml(gelar)}</span> ${escHtml(p.pemain)}
+            ${isTop5 ? '<span class="top5-badge">TOP 5</span>' : ''}
+          </div>
+          <div class="player-ou">${escHtml(ou)}</div>
+        </div>
+        <div class="score-group">
+          <div class="score-item score-gross"><div class="score-val">${p.gross}</div><div class="score-lbl">Gross</div></div>
+          <div class="score-item score-hcp"><div class="score-val">${p.hcp}</div><div class="score-lbl">HCP</div></div>
+          <div class="score-item score-nett"><div class="score-val">${p.nett}</div><div class="score-lbl">Nett</div></div>
+        </div>
+        ${isTop5 ? `<div class="expand-arr">▼</div>` : ''}
+      </div>
+      ${isTop5 ? `<div class="holes-detail" id="gholes_${i}"></div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderNett(players) {
+  const list = document.getElementById('nettList');
+  document.getElementById('nettCount').textContent = players.length + ' pemain';
+
+  if (!players.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🎯</div>Belum ada data score</div>`;
+    return;
+  }
+
+  list.innerHTML = players.map((p, i) => {
+    const isTop5    = i < 5;
+    const rankClass = i < 3 ? `rank-${i+1}` : i < 5 ? `rank-${i+1}` : 'rank-other';
+    const anggota   = anggotaMap[p.pemain + '|' + (p.gelar||'')] || anggotaMap[p.pemain + '|Mr.'] || anggotaMap[p.pemain + '|Mrs.'] || {};
+    const foto      = anggota.foto || '';
+    const ou        = anggota.ou   || '';
+    const gelar     = p.gelar || anggota.gelar || '';
+    const icon      = gelar === 'Mrs.' ? '👩' : '👨';
+
+    return `
+    <div class="rank-row ${rankClass}" id="nrow_${i}">
+      <div class="rank-summary" onclick="toggleHoles('nrow_${i}','nett',${i})">
+        <div class="rank-num">${i < 3 ? MEDALS[i] : i+1}</div>
+        ${foto
+          ? `<img class="player-photo" src="${escHtml(foto)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+             <div class="player-photo-placeholder" style="display:none;">${icon}</div>`
+          : `<div class="player-photo-placeholder">${icon}</div>`
+        }
+        <div class="player-info">
+          <div class="player-name">
+            <span class="player-gelar">${escHtml(gelar)}</span> ${escHtml(p.pemain)}
+            ${isTop5 ? '<span class="top5-badge">TOP 5</span>' : ''}
+          </div>
+          <div class="player-ou">${escHtml(ou)}</div>
+        </div>
+        <div class="score-group">
+          <div class="score-item score-nett"><div class="score-val">${p.nett}</div><div class="score-lbl">Nett</div></div>
+          <div class="score-item score-hcp"><div class="score-val">${p.hcp}</div><div class="score-lbl">HCP</div></div>
+          <div class="score-item score-gross"><div class="score-val">${p.gross}</div><div class="score-lbl">Gross</div></div>
+        </div>
+        ${isTop5 ? `<div class="expand-arr">▼</div>` : ''}
+      </div>
+      ${isTop5 ? `<div class="holes-detail" id="nholes_${i}"></div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+const holesCache = {};
+
+async function toggleHoles(rowId, type, rank) {
+  if (rank >= 5) return;
+
+  const prefix = type === 'gross' ? 'g' : 'n';
+  const detEl  = document.getElementById(prefix + 'holes_' + rank);
+  const rowEl  = document.getElementById(rowId);
+  if (!detEl) return;
+
+  const isOpen = detEl.classList.contains('open');
+  if (isOpen) {
+    detEl.classList.remove('open');
+    rowEl?.classList.remove('expanded');
+    return;
+  }
+
+  detEl.classList.add('open');
+  rowEl?.classList.add('expanded');
+
+  const listEl   = document.getElementById(type === 'gross' ? 'grossList' : 'nettList');
+  const nameEl   = listEl?.querySelectorAll('.player-name')[rank];
+  const fullText = nameEl?.textContent?.trim() || '';
+
+  const cacheKey = prefix + '_' + rank + '_' + fullText;
+  if (holesCache[cacheKey]) {
+    detEl.innerHTML = holesCache[cacheKey];
+    return;
+  }
+
+  detEl.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--text2);text-align:center;">⏳ Memuat...</div>';
+
+  let targetNama = '', targetGelar = '';
+  for (const [key, val] of Object.entries(anggotaMap)) {
+    const [n, g] = key.split('|');
+    if (fullText.includes(n) && fullText.includes(g)) {
+      targetNama = n; targetGelar = g; break;
+    }
+  }
+
+  if (!targetNama) {
+    detEl.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--text2);text-align:center;">Data tidak ditemukan</div>';
+    return;
+  }
+
+  try {
+    const key = encodeURIComponent(targetNama + '|' + targetGelar);
+    const res = await fetch(`${API_URL}?action=getPlayerStats&pemain=${key}`, { redirect:'follow' });
+    const result = await res.json();
+
+    const history = result.history || [];
+    const latest  = history[0];
+    if (!latest || !latest.holes) {
+      detEl.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--text2);text-align:center;">Belum ada detail hole</div>';
+      return;
+    }
+
+    const teeBox   = latest.teeBox || '';
+    const holesArr = teeBox === '1st Nine'   ? [1,2,3,4,5,6,7,8,9]
+                   : teeBox === '2nd Nine'   ? [10,11,12,13,14,15,16,17,18]
+                   : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
+
+    const cells = holesArr.map(n => {
+      const sc   = parseInt(latest.holes['h'+n]) || 0;
+      const par  = PAR_H[n];
+      const diff = sc > 0 ? sc - par : null;
+      const cls  = diff === null ? '' : diff <= -2 ? 'h-eagle' : diff === -1 ? 'h-birdie' : diff === 0 ? 'h-par' : diff === 1 ? 'h-bogey' : 'h-dbogey';
+      return `<div class="hole-cell">
+        <div class="hole-num">${n}</div>
+        <div class="hole-score ${cls}">${sc > 0 ? sc : '-'}</div>
+        <div class="hole-par">${par}</div>
+      </div>`;
+    }).join('');
+
+    const out = latest.out || '';
+    const ins = latest.ins || '';
+
+    const html = `
+      <div class="holes-grid">${cells}</div>
+      <div class="holes-sub">
+        ${out ? `<span>Out: <b>${out}</b></span>` : ''}
+        ${ins ? `<span>In: <b>${ins}</b></span>` : ''}
+        <span>Total: <b>${latest.gross}</b></span>
+        <span>Poin: <b>${latest.stableford}</b></span>
+        <span>HCP: <b>${latest.hcp}</b></span>
+        <span>Nett: <b>${latest.nett}</b></span>
+      </div>`;
+
+    holesCache[cacheKey] = html;
+    detEl.innerHTML = html;
+
+  } catch(e) {
+    detEl.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--red);">❌ ${e.message}</div>`;
+  }
+}
+
+// ── PRINT TOURNAMENT SCORE ────────────────────────────────
+async function printTournamentScore() {
+  if (!tournamentId) { alert('Tidak ada tournament yang dipilih'); return; }
+
+  const btn = document.getElementById('btnPrintScore');
+  btn.textContent = '⏳ Memuat...';
+  btn.disabled    = true;
+
+  try {
+    const res    = await fetch(`${API_URL}?action=getTournamentScores&tournamentId=${encodeURIComponent(tournamentId)}`, { redirect:'follow' });
+    const result = await res.json();
+    if (result.status !== 'ok') throw new Error(result.message);
+
+    const trn    = result.tournament;
+    const scores = result.scores;
+
+    if (!scores.length) { alert('Belum ada score untuk tournament ini'); btn.textContent = '📄 Print Score'; btn.disabled = false; return; }
+
+    const PAR_P = {
+      1:4, 2:4, 3:3, 4:4, 5:4, 6:5, 7:4, 8:5, 9:3,
+      10:4,11:4,12:3,13:4,14:4,15:5,16:4,17:5,18:3
+    };
+    const DIST = {
+      1:225,2:262,3:181,4:241,5:332,6:419,7:389,8:471,9:197,
+      10:225,11:262,12:181,13:241,14:332,15:419,16:389,17:471,18:197
+    };
+
+    const teeBox   = trn.TeeBox || 'Full Round';
+    const front    = teeBox === '2nd Nine' ? [] : [1,2,3,4,5,6,7,8,9];
+    const back     = teeBox === '1st Nine' ? [] : [10,11,12,13,14,15,16,17,18];
+    const allHoles = [...front, ...back];
+
+    const parOut = front.reduce((s,h) => s+PAR_P[h], 0);
+    const parIn  = back.reduce((s,h)  => s+PAR_P[h], 0);
+    const parTot = allHoles.reduce((s,h) => s+PAR_P[h], 0);
+
+    function thS(extra) { return `padding:3px 4px;border:1px solid #ccc;text-align:center;font-size:9px;font-weight:700;${extra||''}`; }
+    function tdS(extra) { return `padding:3px 4px;border:1px solid #ddd;text-align:center;font-size:9px;${extra||''}`; }
+
+    const holeHeaders = allHoles.map(h => `<th style="${thS()}">${h}</th>`).join('');
+    const hasOutIn    = front.length && back.length;
+
+    const parCells  = allHoles.map(h => `<td style="${tdS('color:#1a8a5a;font-weight:700;')}">${PAR_P[h]}</td>`).join('');
+    const outInPar  = hasOutIn ? `<td style="${tdS('color:#1a8a5a;font-weight:700;')}">${parOut}</td><td style="${tdS('color:#1a8a5a;font-weight:700;')}">${parIn}</td>` : '';
+    const distCells = allHoles.map(h => `<td style="${tdS('color:#1a8a5a;font-size:8px;')}">${DIST[h]||'-'}m</td>`).join('');
+    const outInDist = hasOutIn ? `<td style="${tdS()}">-</td><td style="${tdS()}">-</td>` : '';
+
+    let playerRows = '';
+    scores.forEach((p, pi) => {
+      let out = 0, ins = 0;
+      const holeCells = allHoles.map(h => {
+        const sc   = parseInt(p.holes['h'+h]) || 0;
+        const par  = PAR_P[h];
+        const diff = sc > 0 ? sc - par : null;
+        const color = diff === null ? '#555'
+                    : diff <= -2 ? '#E64A19'
+                    : diff === -1 ? '#2E7D32'
+                    : diff === 0  ? '#0277BD'
+                    : diff === 1  ? '#546E7A' : '#B71C1C';
+        if (sc > 0) { if (h <= 9) out += sc; else ins += sc; }
+        return `<td style="${tdS('font-weight:700;')}"><span style="color:${color};">${sc||'-'}</span></td>`;
+      }).join('');
+
+      const outInCells = hasOutIn
+        ? `<td style="${tdS('font-weight:700;color:#333;')}">${out||'-'}</td><td style="${tdS('font-weight:700;color:#333;')}">${ins||'-'}</td>`
+        : '';
+
+      const rowBg = pi % 2 === 0 ? '#fff' : '#f8f9fa';
+      playerRows += `<tr style="background:${rowBg};">
+        <td style="${tdS('font-weight:700;')}">${pi+1}</td>
+        <td style="${tdS('text-align:left;padding-left:6px;white-space:nowrap;min-width:100px;')}">${p.gelar} ${p.pemain}</td>
+        ${holeCells}${outInCells}
+        <td style="${tdS('font-weight:700;color:#f5a623;font-size:10px;')}">${p.gross||'-'}</td>
+        <td style="${tdS('font-weight:700;color:#9b59b6;font-size:10px;')}">${p.hcp||0}</td>
+        <td style="${tdS('font-weight:700;color:#27ae60;font-size:10px;')}">${p.nett||'-'}</td>
+      </tr>`;
+    });
+
+    const printHtml = `<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8">
+<title>Score - ${trn.Nama}</title>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;padding:8px;color:#000;font-size:9px;}
+  @page{size:A4 landscape;margin:8mm;}
+  @media print{body{padding:0;}}
+  table{border-collapse:collapse;width:100%;}
+</style>
+</head><body>
+  <div style="text-align:center;margin-bottom:8px;border-bottom:2px solid #1a8a5a;padding-bottom:6px;">
+    <div style="font-size:16px;font-weight:700;color:#1a8a5a;">⛳ ROSS GOLF COURSE · ROSS SCORECARD</div>
+    <div style="font-size:10px;color:#555;margin-top:2px;">Lapangan Golf PT.Tolan Tiga Indonesia SS Region</div>
+    <div style="font-size:10px;font-weight:700;color:#333;margin-top:2px;">${trn.Nama}</div>
+    <div style="font-size:9px;color:#555;margin-top:2px;">
+      📅 ${fmtDateStr(trn.Tanggal)} &nbsp;·&nbsp; 🏌️ ${teeBox} &nbsp;·&nbsp; 👥 ${scores.length} Peserta &nbsp;·&nbsp; 🌍 ${trn.Region}
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr style="background:#1a3d28;color:white;">
+        <th style="${thS('background:#1a3d28;color:white;width:20px;')}">No</th>
+        <th style="${thS('background:#1a3d28;color:white;text-align:left;padding-left:6px;min-width:100px;')}">Nama Golfer</th>
+        ${holeHeaders.replace(/style="[^"]*"/g, () => `style="${thS('background:#1a3d28;color:white;')}"` )}
+        ${hasOutIn ? `<th style="${thS('background:#1a3d28;color:white;')}">Out</th><th style="${thS('background:#1a3d28;color:white;')}">In</th>` : ''}
+        <th style="${thS('background:#1a3d28;color:#f5a623;')}">Gross</th>
+        <th style="${thS('background:#1a3d28;color:#9b59b6;')}">HCP</th>
+        <th style="${thS('background:#1a3d28;color:#2ecc71;')}">Nett</th>
+      </tr>
+      <tr style="background:#e8f4ee;">
+        <td style="${tdS('font-weight:700;color:#1a8a5a;')}">Par</td>
+        <td style="${tdS('text-align:left;padding-left:6px;color:#1a8a5a;font-weight:700;')}">Par Lapangan</td>
+        ${parCells}${outInPar}
+        <td style="${tdS('font-weight:700;color:#f5a623;')}">${parTot}</td>
+        <td style="${tdS()}">-</td><td style="${tdS()}">-</td>
+      </tr>
+      <tr style="background:#f0f8f4;">
+        <td style="${tdS('color:#1a8a5a;')}">Jarak</td>
+        <td style="${tdS('text-align:left;padding-left:6px;color:#1a8a5a;')}">Meter</td>
+        ${distCells}${outInDist}
+        <td style="${tdS()}">-</td><td style="${tdS()}">-</td><td style="${tdS()}">-</td>
+      </tr>
+    </thead>
+    <tbody>${playerRows}</tbody>
+  </table>
+  <div style="text-align:center;font-size:8px;color:#999;margin-top:8px;border-top:1px solid #eee;padding-top:4px;">
+    ROSS Scorecard · Lapangan Golf PT.Tolan Tiga Indonesia SS Region · Dicetak: ${new Date().toLocaleString('id-ID')}
+  </div>
+</body></html>`;
+
+    const w = window.open('', '_blank', 'width=1100,height=750');
+    if (!w) { alert('Popup diblokir. Izinkan popup lalu coba lagi.'); return; }
+    w.document.write(printHtml);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 600);
+
+  } catch(e) {
+    alert('Gagal: ' + e.message);
+  }
+
+  btn.textContent = '📄 Print Score';
+  btn.disabled    = false;
+}
+
+function fmtDateStr(d) {
+  if (!d) return '';
+  const s = d.toString().split('T')[0];
+  const p = s.split('-');
+  if (p.length !== 3) return s;
+  const m = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  return `${p[2]} ${m[parseInt(p[1])-1]} ${p[0]}`;
+}
+
+function fmtTime(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
