@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<title>ROSS Scorecard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a1a0f;--bg2:#0f2418;--bg3:#163520;
+  --teal:#1a8a5a;--teal2:#2ecc71;
+  --gold:#f5a623;--green:#2ecc71;--red:#e74c3c;
+  --orange:#e67e22;--purple:#9b59b6;
+  --text:#e8f4ee;--text2:#7abf96;
+  --border:#1a3d28;--cell:#0c1f12;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Tahoma,sans-serif;min-height:100vh;overscroll-behavior:none;}
+
+/* ── SPLASH ───────────────────────────────────────────── */
+#splash{
+  position:fixed;inset:0;z-index:9998;
+  background:linear-gradient(160deg,#050f08 0%,#0a1a0f 50%,#050f08 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:0;
+}
+.slide-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,.3);
+  transition:background .3s;cursor:pointer;
+}
+.slide-dot.active{background:var(--gold);}
+.splash-logo{
+  width:90px;height:90px;
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:44px;margin-bottom:28px;
+  box-shadow:0 0 40px rgba(26,138,90,.5),0 0 80px rgba(26,138,90,.2);
+  animation:splashPulse 2s ease-in-out infinite;
+}
+@keyframes splashPulse{0%,100%{box-shadow:0 0 40px rgba(26,138,90,.5),0 0 80px rgba(26,138,90,.2);}50%{box-shadow:0 0 60px rgba(26,138,90,.8),0 0 120px rgba(26,138,90,.3);}}
+.splash-club{font-size:13px;color:var(--teal2);font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;}
+.splash-title{font-size:32px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:6px;line-height:1.1;}
+.splash-quote{font-size:15px;color:var(--text2);margin-bottom:8px;font-style:italic;}
+.splash-quote2{font-size:18px;font-weight:700;color:var(--teal2);margin-bottom:32px;letter-spacing:1px;}
+.splash-progress{width:200px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;margin-bottom:20px;}
+.splash-bar{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));width:0%;animation:splashFill 3s linear forwards;}
+@keyframes splashFill{from{width:0%;}to{width:100%;}}
+.splash-skip{background:transparent;border:1px solid var(--border);color:var(--text2);padding:8px 20px;border-radius:20px;font-size:12px;cursor:pointer;letter-spacing:1px;}
+.splash-skip:active{opacity:.7;}
+
+/* ── TABS ─────────────────────────────────────────────── */
+.sc-tab{flex:1;padding:11px 6px;text-align:center;font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.sc-tab-active{color:var(--teal2);border-bottom-color:var(--teal);}
+
+/* ── HEADER ───────────────────────────────────────────── */
+.hdr{background:linear-gradient(135deg,#0a1a0f 0%,#0e2418 100%);border-bottom:2px solid var(--teal);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.hdr-logo{display:flex;align-items:center;gap:8px;}
+.hdr-icon{width:32px;height:32px;background:var(--teal);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.hdr-name{font-size:15px;font-weight:700;color:var(--teal2);letter-spacing:.5px;}
+.hdr-sub{font-size:10px;color:var(--text2);}
+.hdr-badge{background:rgba(26,138,90,.2);border:1px solid var(--teal);color:var(--teal2);font-size:10px;padding:3px 8px;border-radius:10px;}
+
+/* ── SCREENS ──────────────────────────────────────────── */
+.screen{display:none;padding:14px 12px 80px;}
+.screen.active{display:block;}
+
+/* ── GENDER BTN ───────────────────────────────────────── */
+.g-btn{flex:1;padding:10px 6px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
+.g-btn.g-active{background:var(--teal);color:#fff;border-color:var(--teal);}
+
+/* ── FORM ─────────────────────────────────────────────── */
+.sec-title{font-size:11px;color:var(--teal2);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;margin-top:20px;}
+.sec-title:first-child{margin-top:4px;}
+label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:600;}
+select,input[type=date]{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 12px;border-radius:8px;font-size:13px;margin-bottom:12px;-webkit-appearance:none;appearance:none;}
+select:focus,input:focus{outline:none;border-color:var(--teal);}
+option{background:var(--bg2);}
+
+/* ── PLAYER ROW ───────────────────────────────────────── */
+.player-row{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.player-num{background:var(--teal);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.player-row select{margin:0;flex:1;font-size:13px;padding:8px 10px;}
+.btn-remove{background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;}
+
+/* ── BUTTONS ──────────────────────────────────────────── */
+.btn{width:100%;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;letter-spacing:.3px;transition:opacity .2s;}
+.btn:active{opacity:.8;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary{background:var(--teal);color:#fff;}
+.btn-gold{background:var(--gold);color:#0a1a0f;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-red{background:var(--red);color:#fff;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2);}
+.btn-add{width:100%;padding:10px;border:1.5px dashed var(--border);background:transparent;color:var(--text2);border-radius:10px;font-size:13px;cursor:pointer;margin-bottom:12px;}
+
+/* ── INFO BAR ─────────────────────────────────────────── */
+.info-bar{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text2);}
+.info-bar b{color:var(--teal2);}
+
+/* ── SCORECARD TABLE ──────────────────────────────────── */
+.sc-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid var(--border);}
+table{border-collapse:collapse;width:100%;}
+th{background:var(--bg2);font-size:11px;color:var(--text2);padding:8px 4px;border:1px solid var(--border);position:sticky;top:0;white-space:nowrap;}
+th.th-player{min-width:58px;max-width:80px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:var(--teal2);}
+td{border:1px solid var(--border);text-align:center;padding:0;white-space:nowrap;}
+td.hole-lbl{background:var(--bg2);font-weight:700;font-size:12px;padding:3px 4px;min-width:36px;color:var(--text);width:36px;line-height:1.3;vertical-align:middle;}
+.hole-dist{font-size:9px;color:var(--teal2);font-weight:600;display:block;margin-top:1px;}
+td.par-cell{background:var(--bg2);font-size:12px;color:var(--teal2);width:28px;padding:0 4px;}
+td.score-cell{padding:2px;width:58px;}
+td.score-cell input{
+  width:54px;height:38px;
+  background:var(--cell);border:none;
+  color:var(--text);text-align:center;
+  font-size:17px;font-weight:700;
+  padding:0;border-radius:4px;
+  -moz-appearance:textfield;
+  touch-action:manipulation;
+}
+td.score-cell input::-webkit-inner-spin-button,
+td.score-cell input::-webkit-outer-spin-button{-webkit-appearance:none;}
+td.score-cell input:focus{outline:2px solid var(--teal);background:#0e2418;}
+td.score-cell input.eagle {color:#FFAB91;font-weight:900;}  /* Peach — Eagle+ */
+td.score-cell input.birdie{color:#69F0AE;}                  /* Hijau cerah — Birdie */
+td.score-cell input.par   {color:#40C4FF;}                  /* Biru cerah — Par */
+td.score-cell input.bogey {color:#ECEFF1;}                  /* Abu sangat terang — Bogey */
+td.score-cell input.dbogey{color:#FF1744;}                  /* Merah — Double Bogey+ */
+
+/* ── SUBTOTAL ROWS ────────────────────────────────────── */
+tr.row-sep td{height:3px;background:var(--border);padding:0;}
+tr.row-out td,tr.row-in td{background:#0e2418;font-weight:700;font-size:13px;padding:6px 4px;color:var(--teal2);}
+tr.row-total td{background:#0d1f0f;font-weight:700;font-size:13px;padding:6px 4px;color:var(--gold);}
+tr.row-poin td{background:#14102a;font-size:12px;padding:5px 4px;color:var(--purple);}
+tr.row-hcp td{background:#0e1c14;font-size:12px;padding:5px 4px;color:var(--text2);}
+tr.row-nett td{background:#0d1f12;font-weight:700;font-size:13px;padding:6px 4px;color:var(--green);}
+td.row-lbl{text-align:left;padding-left:8px!important;font-size:11px;color:var(--text2)!important;font-weight:600!important;}
+
+/* ── SUMMARY ──────────────────────────────────────────── */
+.sum-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
+.sum-name{font-size:15px;font-weight:700;color:var(--teal2);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.sum-item{background:var(--bg3);border-radius:8px;padding:10px;text-align:center;}
+.sum-val{font-size:22px;font-weight:700;line-height:1;}
+.sum-lbl{font-size:10px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px;}
+
+/* ── SUCCESS ──────────────────────────────────────────── */
+.success-wrap{text-align:center;padding:24px 16px 16px;}
+.success-icon{font-size:64px;margin-bottom:12px;}
+.success-title{font-size:22px;font-weight:700;color:var(--teal2);margin-bottom:6px;}
+.success-sub{font-size:13px;color:var(--text2);margin-bottom:20px;}
+.result-row{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.result-name{font-weight:700;color:var(--teal2);font-size:14px;}
+.result-scores{font-size:12px;color:var(--text2);display:flex;gap:10px;}
+.result-scores b{font-size:14px;}
+
+/* ── LOADING ──────────────────────────────────────────── */
+#loading{position:fixed;inset:0;background:rgba(10,26,15,.95);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:9999;font-size:14px;color:var(--teal2);}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── TOAST ────────────────────────────────────────────── */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg2);color:var(--text);padding:10px 20px;border-radius:20px;font-size:13px;border:1px solid var(--teal);display:none;z-index:9999;white-space:nowrap;max-width:90vw;text-align:center;}
+
+/* ── BOTTOM BAR ───────────────────────────────────────── */
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:10px 12px;display:flex;gap:8px;z-index:100;}
+
+/* ── PRINT PDF ────────────────────────────────────────── */
+@media print {
+  body * { visibility: hidden; }
+  #printArea, #printArea * { visibility: visible; }
+  #printArea {
+    position: fixed; left: 0; top: 0; width: 100%;
+    background: white; color: black; padding: 16px;
+    font-family: Arial, sans-serif; font-size: 11px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── SPLASH SCREEN ────────────────────────────────────── -->
+<div id="splash">
+  <div id="slideshowBg" style="position:absolute;inset:0;z-index:0;overflow:hidden;">
+    <img id="slideshowImg" src="" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;transition:opacity 1s ease-in-out;opacity:0;">
+    <div style="position:absolute;inset:0;background:rgba(5,15,8,.35);"></div>
+  </div>
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px;">
+    <div class="splash-logo">⛳</div>
+    <div class="splash-club">ROSS Golf Course · 2026</div>
+    <div class="splash-title">Selamat Datang</div>
+    <div class="splash-title" style="color:var(--teal2);font-size:24px;margin-bottom:12px;">Golfer ROSS</div>
+    <div class="splash-quote">Selamat Bermain</div>
+    <div class="splash-quote2">⛳ Do Your Best ⛳</div>
+    <div id="splashLoading" style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:16px;">
+      <div class="spinner" style="border-top-color:var(--gold);"></div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;">Memuat data...</div>
+    </div>
+    <button id="btnMasuk" class="splash-skip" style="display:none;background:var(--teal);color:#fff;border:none;padding:12px 32px;font-size:15px;font-weight:700;border-radius:10px;letter-spacing:2px;margin-top:16px;" onclick="hideSplash()">
+      MASUK ⛳
+    </button>
+    <div id="slideshowDots" style="display:flex;gap:6px;margin-top:16px;"></div>
+  </div>
+</div>
+<div id="loading"><div class="spinner"></div><div>Memuat data ROSS...</div></div>
+<div id="toast"></div>
+<div id="printArea" style="display:none;"></div>
+
+<!-- ── HEADER ─────────────────────────────────────────── -->
+<div class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-icon">⛳</div>
+    <div>
+      <div class="hdr-name">ROSS Scorecard</div>
+      <div class="hdr-sub">Lapangan Golf PT.Tolan Tiga Indonesia SS Region</div>
+    </div>
+  </div>
+  <div id="hdrBadge" class="hdr-badge">loading...</div>
+</div>
+
+<!-- ── TABS ───────────────────────────────────────────── -->
+<div style="display:flex;background:#0f2418;border-bottom:1px solid var(--border);">
+  <div id="tab-input"     class="sc-tab sc-tab-active" onclick="switchScTab('input')">⛳ Scorecard</div>
+  <div id="tab-record"    class="sc-tab"               onclick="switchScTab('record')">📋 Record</div>
+  <div id="tab-champions" class="sc-tab"               onclick="switchScTab('champions')">🏆 Champions</div>
+</div>
+
+<!-- ── SCREEN: SETUP ──────────────────────────────────── -->
+<div id="screen-setup" class="screen active">
+  <div class="sec-title">Tanggal & Tipe</div>
+
+  <label>Tanggal Main</label>
+  <input type="date" id="tanggal">
+
+  <label>Tee Box</label>
+  <select id="teeBox">
+    <option value="1st Nine">⬤ 1st Nine — Hole 1–9</option>
+    <option value="2nd Nine">⬤ 2nd Nine — Hole 10–18</option>
+    <option value="Full Round">⬤ Full Round — 18 Hole</option>
+  </select>
+
+  <label>Tipe Permainan</label>
+  <select id="tipePermainan" onchange="toggleTournament()">
+    <option value="latihan">🏋️ Latihan</option>
+    <option value="tournament">🏆 Tournament</option>
+  </select>
+
+  <div id="trn-section" style="display:none;">
+    <label>Pilih Tournament Aktif</label>
+    <select id="tournamentId">
+      <option value="">-- Pilih Tournament --</option>
+    </select>
+  </div>
+
+  <div class="sec-title">Kategori Pemain</div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;">
+    <button id="gBtn-mens"   class="g-btn g-active" onclick="setGender('mens')">👨 Men's</button>
+    <button id="gBtn-ladies" class="g-btn"          onclick="setGender('ladies')">👩 Ladies</button>
+    <button id="gBtn-open"   class="g-btn"          onclick="setGender('open')">🌐 Open</button>
+  </div>
+
+  <div class="sec-title">Pemain (Maks 5)</div>
+  <div id="playerList"></div>
+  <button class="btn-add" id="addPlayerBtn" onclick="addPlayer()">＋ Tambah Pemain</button>
+
+  <button class="btn btn-gold" onclick="startScorecard()" style="margin-top:8px;">
+    ▶ Mulai Scorecard
+  </button>
+</div>
+
+<!-- ── SCREEN: SCORECARD ──────────────────────────────── -->
+<div id="screen-scorecard" class="screen">
+  <div class="info-bar" id="infoBar"></div>
+  <div class="sc-wrap">
+    <table id="scTable"></table>
+  </div>
+  <div style="height:70px;"></div>
+  <div class="bottom-bar">
+    <button class="btn btn-outline" style="width:30%;margin:0;" onclick="showScreen('setup')">◀ Kembali</button>
+    <button class="btn btn-gold"    style="width:70%;margin:0;" onclick="showSummary()">📊 Lihat Hasil</button>
+  </div>
+</div>
+
+<!-- ── SCREEN: SUMMARY ────────────────────────────────── -->
+<div id="screen-summary" class="screen">
+  <div class="sec-title">Ringkasan Hasil</div>
+  <div id="summaryContent"></div>
+  <div style="height:70px;"></div>
+  <div class="bottom-bar">
+    <button class="btn btn-outline" style="width:38%;margin:0;" onclick="showScreen('scorecard')">◀ Edit</button>
+    <button class="btn btn-green"   style="width:62%;margin:0;" id="btnSave" onclick="saveScore()">💾 Simpan Score</button>
+  </div>
+</div>
+
+<!-- ── SCREEN: SUCCESS ────────────────────────────────── -->
+<div id="screen-success" class="screen">
+  <div class="success-wrap">
+    <div class="success-icon">🏆</div>
+    <div class="success-title">Score Tersimpan!</div>
+    <div class="success-sub" id="successMsg"></div>
+    <div id="resultCards" style="text-align:left;margin-bottom:16px;"></div>
+    <button class="btn btn-gold" onclick="generatePDF()">📄 Download / Share PDF</button>
+    <button class="btn btn-primary" onclick="resetApp()">🔄 Scorecard Baru</button>
+  </div>
+</div>
+
+<!-- ── SCREEN: CHAMPIONS ─────────────────────────────── -->
+<div id="screen-champions" class="screen">
+  <div style="position:relative;margin-bottom:12px;">
+    <select id="champTournament" onchange="filterChampions()"
+      style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:13px;">
+      <option value="">-- Pilih Tournament --</option>
+    </select>
+  </div>
+  <div id="championsList">
+    <div style="text-align:center;padding:32px;color:var(--text2);font-size:13px;">
+      <div style="font-size:36px;margin-bottom:12px;">🏆</div>
+      Memuat data champions...
+    </div>
+  </div>
+</div>
+
+<!-- ── SCREEN: RECORD ─────────────────────────────────── -->
+<div id="screen-record" class="screen">
+  <div style="position:relative;margin-bottom:12px;">
+    <input type="text" id="recordSearch"
+      placeholder="🔍 Cari nama pemain..."
+      oninput="filterRecord()"
+      style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:13px;">
+  </div>
+  <div id="recordList">
+    <div style="text-align:center;padding:32px;color:var(--text2);font-size:13px;">
+      <div style="font-size:36px;margin-bottom:12px;">📋</div>
+      Memuat data record...
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbw3kg6NrQ6QfmoAk6MRBWqlUhv5dTDFXlxFTC54nrM_cTZmC0pQmi0oNN2ogcXsiSzdUw/exec';
+
+const PAR = {
+  1:4,  2:4,  3:3,  4:4,  5:4,  6:5,  7:4,  8:5,  9:3,
+  10:4, 11:4, 12:3, 13:4, 14:4, 15:5, 16:4, 17:5, 18:3
+};
+
+let masterData     = null;
+let playerCount    = 0;
+let selectedGender = 'mens';
+let allRecords     = [];
+let lastSaveData   = null;
+
+// ── SPLASH ──────────────────────────────────────────────
+function hideSplash() {
+  const s = document.getElementById('splash');
+  if (!s) return;
+  s.style.transition = 'opacity .5s';
+  s.style.opacity = '0';
+  setTimeout(() => s.style.display = 'none', 500);
+  playerCount = 0;
+  document.getElementById('playerList').innerHTML = '';
+  document.getElementById('addPlayerBtn').style.display = 'block';
+  addPlayer();
+}
+
+function splashReady() {
+  document.getElementById('splashLoading').style.display = 'none';
+  const btn = document.getElementById('btnMasuk');
+  if (btn) btn.style.display = 'block';
+}
+
+// ── SLIDESHOW ────────────────────────────────────────────
+let slideIdx    = 0;
+let slideTimer  = null;
+let slidePhotos = [];
+
+function initSlideshow(photos) {
+  if (!photos || !photos.length) return;
+  slidePhotos = photos;
+  const dotsEl = document.getElementById('slideshowDots');
+  if (dotsEl) {
+    dotsEl.innerHTML = photos.map((_, i) =>
+      `<div class="slide-dot ${i===0?'active':''}" onclick="goSlide(${i})"></div>`
+    ).join('');
+  }
+  const preload = new Image();
+  preload.onload = function() {
+    showSlide(0);
+    slideTimer = setInterval(() => {
+      slideIdx = (slideIdx + 1) % slidePhotos.length;
+      showSlide(slideIdx);
+    }, 5000);
+  };
+  preload.onerror = function() {
+    showSlide(0);
+    slideTimer = setInterval(() => {
+      slideIdx = (slideIdx + 1) % slidePhotos.length;
+      showSlide(slideIdx);
+    }, 5000);
+  };
+  preload.src = photos[0].url;
+}
+
+function showSlide(idx) {
+  const img = document.getElementById('slideshowImg');
+  if (!img || !slidePhotos[idx]) return;
+  img.style.opacity = '0';
+  setTimeout(() => {
+    img.src = slidePhotos[idx].url;
+    img.style.opacity = '1';
+  }, 500);
+  document.querySelectorAll('.slide-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === idx);
+  });
+  slideIdx = idx;
+}
+
+function goSlide(idx) {
+  clearInterval(slideTimer);
+  showSlide(idx);
+  slideTimer = setInterval(() => {
+    slideIdx = (slideIdx + 1) % slidePhotos.length;
+    showSlide(slideIdx);
+  }, 5000);
+}
+
+// ── TAB SWITCHING ────────────────────────────────────────
+function switchScTab(name) {
+  ['input','record','champions'].forEach(t => {
+    document.getElementById('tab-' + t)?.classList.remove('sc-tab-active');
+  });
+  document.getElementById('tab-' + name)?.classList.add('sc-tab-active');
+
+  ['setup','scorecard','summary','success'].forEach(s => {
+    const el = document.getElementById('screen-' + s);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('screen-record').style.display = 'none';
+  document.getElementById('screen-champions').style.display = 'none';
+
+  if (name === 'input') {
+    const setupEl = document.getElementById('screen-setup');
+    if (setupEl) { setupEl.style.display = 'block'; setupEl.classList.add('active'); }
+  } else if (name === 'record') {
+    document.getElementById('screen-record').style.display = 'block';
+    allRecords  = [];
+    openDetailId = '';
+    loadRecord();
+  } else if (name === 'champions') {
+    document.getElementById('screen-champions').style.display = 'block';
+    loadChampions();
+  }
+}
+
+function setGender(g) {
+  selectedGender = g;
+  ['mens','ladies','open'].forEach(k => {
+    document.getElementById('gBtn-' + k)?.classList.remove('g-active');
+  });
+  document.getElementById('gBtn-' + g)?.classList.add('g-active');
+  playerCount = 0;
+  document.getElementById('playerList').innerHTML = '';
+  document.getElementById('addPlayerBtn').style.display = 'block';
+  addPlayer();
+}
+
+// ── INIT ─────────────────────────────────────────────────
+window.onload = async () => {
+  document.getElementById('tanggal').value = todayStr();
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(API_URL + '?action=getMasterData', {
+      redirect:'follow',
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    masterData = await res.json();
+    if (masterData.status !== 'ok') throw new Error(masterData.message);
+    window._dist = buildDistMap(masterData.teeBox || []);
+    populateTournaments();
+    document.getElementById('hdrBadge').textContent = masterData.anggota.length + ' anggota';
+  } catch(e) {
+    showToast('⚠️ Gagal memuat data: ' + e.message, 4000);
+    document.getElementById('hdrBadge').textContent = 'Offline';
+  }
+  addPlayer();
+  document.getElementById('loading').style.display = 'none';
+  splashReady();
+  if (masterData && masterData.slideshow && masterData.slideshow.length) {
+    initSlideshow(masterData.slideshow);
+  }
+};
+
+// ── DISTANCE MAP ─────────────────────────────────────────
+function buildDistMap(teeBoxData) {
+  const dist = {};
+  (teeBoxData || []).forEach(row => {
+    const hole = parseInt(row['Hole']);
+    if (!hole) return;
+    if (hole <= 9) {
+      const bd = parseInt(row['1st Nine Distance'] || 0);
+      dist[hole] = bd || 0;
+    } else {
+      const pd = parseInt(row['2nd Nine Distance'] || 0);
+      dist[hole] = pd || 0;
+    }
+  });
+  return dist;
+}
+
+function populateTournaments() {
+  if (!masterData?.tournaments) return;
+  const sel = document.getElementById('tournamentId');
+  sel.innerHTML = '<option value="">-- Pilih Tournament --</option>';
+  masterData.tournaments
+    .filter(t => t.Status === 'AKTIF')
+    .forEach(t => {
+      const o = document.createElement('option');
+      o.value = t.ID;
+      o.textContent = t.Nama + ' · ' + t.Tanggal;
+      sel.appendChild(o);
+    });
+}
+
+function toggleTournament() {
+  const isTrn = document.getElementById('tipePermainan').value === 'tournament';
+  document.getElementById('trn-section').style.display = isTrn ? 'block' : 'none';
+}
+
+// ── PLAYER MANAGEMENT ────────────────────────────────────
+function addPlayer() {
+  if (playerCount >= 5) { showToast('Maksimal 5 pemain'); return; }
+  playerCount++;
+
+  let filteredAnggota = masterData?.anggota || [];
+  if (selectedGender === 'mens') {
+    filteredAnggota = filteredAnggota.filter(a => (a['Gelar']||'').trim() === 'Mr.');
+  } else if (selectedGender === 'ladies') {
+    filteredAnggota = filteredAnggota.filter(a => (a['Gelar']||'').trim() === 'Mrs.');
+  }
+
+  let opts = `<option value="">── Pilih Pemain ${playerCount} ──</option>`;
+  filteredAnggota.forEach(a => {
+    const hcp   = (a.Handicap !== undefined && a.Handicap !== '') ? a.Handicap : 0;
+    const gelar = (a['Gelar']||'').trim();
+    const icon  = gelar === 'Mrs.' ? '👩' : '👨';
+    opts += `<option value="${escHtml(a.Nama)}" data-hcp="${hcp}" data-gelar="${escHtml(gelar)}">${icon} ${escHtml(gelar)} ${escHtml(a.Nama)} · HCP ${hcp}</option>`;
+  });
+
+  const div = document.createElement('div');
+  div.className = 'player-row';
+  div.id = 'pr_' + playerCount;
+  div.innerHTML = `
+    <div class="player-num">${playerCount}</div>
+    <select id="ps_${playerCount}" style="flex:1;margin:0;">${opts}</select>
+    ${playerCount > 1 ? `<button class="btn-remove" onclick="removePlayer(${playerCount})">✕</button>` : ''}
+  `;
+  document.getElementById('playerList').appendChild(div);
+  if (playerCount >= 5) document.getElementById('addPlayerBtn').style.display = 'none';
+}
+
+function removePlayer(n) {
+  document.getElementById('pr_' + n)?.remove();
+  playerCount = document.querySelectorAll('.player-row').length;
+  document.getElementById('addPlayerBtn').style.display = 'block';
+  document.querySelectorAll('.player-row').forEach((r, i) => {
+    const num = r.querySelector('.player-num');
+    if (num) num.textContent = i + 1;
+  });
+}
+
+function getPlayers() {
+  const players = [];
+  document.querySelectorAll('.player-row').forEach(row => {
+    const sel = row.querySelector('select');
+    if (sel?.value) {
+      const opt   = sel.options[sel.selectedIndex];
+      const hcp   = parseInt(opt.getAttribute('data-hcp')) || 0;
+      const gelar = opt.getAttribute('data-gelar') || '';
+      players.push({ nama: sel.value, hcp, gelar });
+    }
+  });
+  return players;
+}
+
+// ── START SCORECARD ──────────────────────────────────────
+function startScorecard() {
+  const players = getPlayers();
+  if (!players.length) { showToast('⚠️ Pilih minimal 1 pemain'); return; }
+  const names = players.map(p => p.nama);
+  if (new Set(names).size !== names.length) { showToast('⚠️ Ada pemain duplikat'); return; }
+  if (document.getElementById('tipePermainan').value === 'tournament'
+      && !document.getElementById('tournamentId').value) {
+    showToast('⚠️ Pilih tournament terlebih dahulu'); return;
+  }
+  buildTable(players);
+  showScreen('scorecard');
+}
+
+// ── BUILD SCORECARD TABLE ────────────────────────────────
+function buildTable(players) {
+  const teeBox  = document.getElementById('teeBox').value;
+  const tanggal = document.getElementById('tanggal').value;
+  const dist    = window._dist || {};
+
+  const holes = teeBox === '1st Nine'   ? range(1,9)
+              : teeBox === '2nd Nine'   ? range(10,18)
+              : range(1,18);
+
+  const front = holes.filter(h => h <= 9);
+  const back  = holes.filter(h => h >= 10);
+
+  document.getElementById('infoBar').innerHTML =
+    `<div>📅 <b>${fmtDate(tanggal)}</b></div>` +
+    `<div>🏌️ <b>${teeBox}</b></div>` +
+    `<div>👥 <b>${players.length} pemain</b></div>`;
+
+  let h = `<thead><tr>
+    <th style="width:36px;">Hole<br><span style="font-size:8px;color:var(--teal2);font-weight:400;">meter</span></th>
+    <th style="width:28px;color:var(--teal2);">Par</th>`;
+  players.forEach(p => {
+    const namaDisplay = p.gelar ? `${p.gelar} ${p.nama.split(' ')[0]}` : p.nama.split(' ')[0];
+    h += `<th class="th-player">${namaDisplay}</th>`;
+  });
+  h += `</tr></thead><tbody>`;
+
+  front.forEach(n => { h += holeRow(n, players, dist); });
+  if (front.length) {
+    const pOut = front.reduce((s,n) => s + PAR[n], 0);
+    h += statRow('row-out', 'Out', pOut, players, 'out');
+  }
+  if (back.length) h += `<tr class="row-sep"><td colspan="${2 + players.length}"></td></tr>`;
+  back.forEach(n => { h += holeRow(n, players, dist); });
+  if (back.length) {
+    const pIn = back.reduce((s,n) => s + PAR[n], 0);
+    h += statRow('row-in', 'In', pIn, players, 'in');
+  }
+
+  h += `<tr class="row-sep"><td colspan="${2 + players.length}"></td></tr>`;
+  h += statRow('row-total', 'Total', holes.reduce((s,n) => s+PAR[n],0), players, 'total');
+  h += statRow('row-poin',  'Poin',  '—', players, 'poin');
+  h += statRow('row-hcp',   'HCP',   '—', players, 'hcp');
+  h += statRow('row-nett',  'Nett',  '—', players, 'nett');
+  h += `</tbody>`;
+
+  document.getElementById('scTable').innerHTML = h;
+  window._players = players;
+  window._holes   = holes;
+  window._teeBox  = teeBox;
+  window._tanggal = tanggal;
+}
+
+function holeRow(n, players, dist) {
+  const d = dist?.[n] || 0;
+  let r = `<tr>
+    <td class="hole-lbl">
+      <div>${n}</div>
+      ${d ? `<div class="hole-dist">${d}m</div>` : ''}
+    </td>
+    <td class="par-cell">${PAR[n]}</td>`;
+  players.forEach((p, i) => {
+    r += `<td class="score-cell">
+      <input type="number" id="s_${n}_${i}"
+        min="1" max="20" inputmode="numeric"
+        oninput="recalc()"
+        onfocus="this.select()">
+    </td>`;
+  });
+  return r + `</tr>`;
+}
+
+function statRow(cls, lbl, par, players, id) {
+  let r = `<tr class="${cls}"><td class="row-lbl">${lbl}</td><td>${par}</td>`;
+  players.forEach((p, i) => { r += `<td id="${id}_${i}">—</td>`; });
+  return r + `</tr>`;
+}
+
+// ── RECALC ───────────────────────────────────────────────
+function sf(score, par) {
+  if (!score || score <= 0) return 0;
+  const d = score - par;
+  return d <= -2 ? 4 : d === -1 ? 3 : d === 0 ? 2 : d === 1 ? 1 : 0;
+}
+
+function recalc() {
+  const players = window._players;
+  const holes   = window._holes;
+  if (!players || !holes) return;
+
+  const parMax = holes.length === 18 ? 36 : 18;
+  const front  = holes.filter(h => h <= 9);
+  const back   = holes.filter(h => h >= 10);
+
+  players.forEach((p, i) => {
+    let gross = 0, poin = 0, out = 0, inS = 0;
+    holes.forEach(h => {
+      const inp = document.getElementById('s_' + h + '_' + i);
+      const val = parseInt(inp?.value) || 0;
+      if (val > 0) {
+        gross += val; poin += sf(val, PAR[h]);
+        if (h <= 9) out += val; else inS += val;
+        const d = val - PAR[h];
+        inp.className = d <= -2 ? 'eagle' : d === -1 ? 'birdie' : d === 0 ? 'par' : d === 1 ? 'bogey' : 'dbogey';
+      } else {
+        if (inp) inp.className = '';
+      }
+    });
+    const hcp  = Math.max(0, parMax - poin);
+    const nett = gross > 0 ? gross - hcp : 0;
+    const set = (id, val) => { const el = document.getElementById(id+'_'+i); if(el) el.textContent = val > 0 ? val : '—'; };
+    if (front.length) set('out', out);
+    if (back.length)  set('in',  inS);
+    if (gross > 0) { set('total', gross); set('poin', poin); set('hcp', hcp); set('nett', nett); }
+  });
+}
+
+// ── SHOW SUMMARY ─────────────────────────────────────────
+function showSummary() {
+  const players = window._players;
+  const holes   = window._holes;
+  if (!players || !holes) return;
+
+  const parMax = holes.length === 18 ? 36 : 18;
+  let html = '', hasScore = false;
+
+  players.forEach((p, i) => {
+    let gross = 0, poin = 0;
+    holes.forEach(h => {
+      const val = parseInt(document.getElementById('s_' + h + '_' + i)?.value) || 0;
+      if (val > 0) { gross += val; poin += sf(val, PAR[h]); }
+    });
+    if (!gross) return;
+    hasScore = true;
+    const hcp  = Math.max(0, parMax - poin);
+    const nett = gross - hcp;
+    html += `
+    <div class="sum-card">
+      <div class="sum-name">🏌️ ${escHtml(p.gelar)} ${escHtml(p.nama)}</div>
+      <div class="sum-grid">
+        <div class="sum-item"><div class="sum-val" style="color:var(--gold);">${gross}</div><div class="sum-lbl">Gross Score</div></div>
+        <div class="sum-item"><div class="sum-val" style="color:var(--purple);">${poin}</div><div class="sum-lbl">Stableford</div></div>
+        <div class="sum-item"><div class="sum-val" style="color:var(--text2);">${hcp}</div><div class="sum-lbl">Handicap</div></div>
+        <div class="sum-item"><div class="sum-val" style="color:var(--green);">${nett}</div><div class="sum-lbl">Nett Score</div></div>
+      </div>
+    </div>`;
+  });
+
+  if (!hasScore) { showToast('⚠️ Belum ada score yang diisi'); return; }
+  document.getElementById('summaryContent').innerHTML = html;
+  showScreen('summary');
+}
+
+// ── SAVE SCORE ───────────────────────────────────────────
+async function saveScore() {
+  const players = window._players;
+  const holes   = window._holes;
+  const scores  = [];
+
+  players.forEach((p, i) => {
+    const obj = { pemain: p.nama, gelar: p.gelar || '' };
+    let has = false;
+    for (let h = 1; h <= 18; h++) {
+      const val = parseInt(document.getElementById('s_' + h + '_' + i)?.value) || 0;
+      obj['h' + h] = val;
+      if (val > 0) has = true;
+    }
+    if (has) scores.push(obj);
+  });
+
+  if (!scores.length) { showToast('⚠️ Tidak ada score'); return; }
+
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true;
+  btn.textContent = '⏳ Menyimpan...';
+
+  try {
+    const tanggal      = document.getElementById('tanggal').value;
+    const teeBox       = document.getElementById('teeBox').value;
+    const tipeMain     = document.getElementById('tipePermainan').value;
+    const tournamentId = document.getElementById('tournamentId').value || '';
+
+    const payload = {
+      action: 'saveScore',
+      tanggal, teeBox,
+      type: tipeMain,
+      tournamentId,
+      scores
+    };
+
+    const res    = await fetch(API_URL, {
+      method:'POST', redirect:'follow',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (result.status !== 'ok') throw new Error(result.message);
+
+    lastSaveData = {
+      tanggal, teeBox, tipeMain, tournamentId,
+      players: window._players,
+      holes:   window._holes,
+      results: result.results,
+      scores:  scores,
+      dist:    window._dist || {}
+    };
+
+    document.getElementById('successMsg').textContent =
+      result.message + ' · ' + fmtDate(tanggal);
+
+    let cards = '';
+    result.results.forEach(r => {
+      cards += `
+      <div class="result-row">
+        <div class="result-name">🏌️ ${escHtml(r.pemain)}</div>
+        <div class="result-scores">
+          Gross <b style="color:var(--gold);">${r.gross}</b>
+          HCP <b style="color:var(--text2);">${r.hcp}</b>
+          Nett <b style="color:var(--green);">${r.nett}</b>
+        </div>
+      </div>`;
+    });
+    document.getElementById('resultCards').innerHTML = cards;
+    showScreen('success');
+
+  } catch(e) {
+    showToast('❌ Gagal simpan: ' + e.message, 4000);
+    btn.disabled = false;
+    btn.textContent = '💾 Simpan Score';
+  }
+}
+
+// ── GENERATE PDF ─────────────────────────────────────────
+function generatePDF() {
+  if (!lastSaveData) { showToast('⚠️ Tidak ada data untuk di-print'); return; }
+
+  const { tanggal, teeBox, tipeMain, players, holes, results, scores, dist } = lastSaveData;
+
+  const parRow = holes.map(n => `<td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${PAR[n]}</td>`).join('');
+  const front  = holes.filter(h => h <= 9);
+  const back   = holes.filter(h => h >= 10);
+  const parOut = front.reduce((s,n) => s+PAR[n], 0);
+  const parIn  = back.reduce((s,n) => s+PAR[n], 0);
+  const parTot = holes.reduce((s,n) => s+PAR[n], 0);
+
+  const distRow = holes.map(n => {
+    const d = dist?.[n] || 0;
+    return `<td style="${tdStyle('color:#1a8a5a;font-size:9px;')}">${d ? d+'m' : '-'}</td>`;
+  }).join('');
+
+  const hasOut  = front.length > 0;
+  const hasIn   = back.length  > 0;
+  const hasBoth = hasOut && hasIn;
+
+  const outInHeaders = hasBoth
+    ? `<th style="${thStyle()}">Out</th><th style="${thStyle()}">In</th>`
+    : hasOut ? `<th style="${thStyle()}">Out</th>` : `<th style="${thStyle()}">In</th>`;
+
+  const outInPar = hasBoth
+    ? `<td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${parOut}</td><td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${parIn}</td>`
+    : `<td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${hasOut?parOut:parIn}</td>`;
+
+  const outInDist = hasBoth
+    ? `<td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td>`
+    : `<td style="${tdStyle()}">-</td>`;
+
+  let playerRows = '';
+  players.forEach((p, pi) => {
+    const sc  = scores.find(s => s.pemain === p.nama) || {};
+    const res = results.find(r => r.pemain === p.nama) || {};
+    let out = 0, inS = 0;
+
+    const holeCells = holes.map(n => {
+      const score = parseInt(sc['h'+n]) || 0;
+      const par   = PAR[n];
+      const diff  = score > 0 ? score - par : null;
+      const color = diff === null ? '#555'
+                  : diff <= -2 ? '#E64A19'
+                  : diff === -1 ? '#2E7D32'
+                  : diff === 0 ? '#0277BD'
+                  : diff === 1 ? '#546E7A' : '#B71C1C';
+      if (score > 0) { if (n <= 9) out += score; else inS += score; }
+      return `<td style="${tdStyle('font-weight:700;font-size:12px;')}"><span style="color:${color};">${score > 0 ? score : '-'}</span></td>`;
+    }).join('');
+
+    const outInCells = hasBoth
+      ? `<td style="${tdStyle('font-weight:700;color:#555;')}">${out||'-'}</td><td style="${tdStyle('font-weight:700;color:#555;')}">${inS||'-'}</td>`
+      : `<td style="${tdStyle('font-weight:700;color:#555;')}">${hasOut?out:inS||'-'}</td>`;
+
+    const rowBg = pi % 2 === 0 ? '#ffffff' : '#f8f9fa';
+    playerRows += `<tr style="background:${rowBg};">
+      <td style="${tdStyle('text-align:center;font-weight:700;')}">${pi+1}</td>
+      <td style="${tdStyle('text-align:left;padding-left:8px;white-space:nowrap;min-width:120px;')}">${p.gelar} ${p.nama}</td>
+      ${holeCells}
+      ${outInCells}
+      <td style="${tdStyle('font-weight:700;color:#f5a623;font-size:12px;')}">${res.gross||'-'}</td>
+      <td style="${tdStyle('font-weight:700;color:#9b59b6;font-size:12px;')}">${res.hcp !== undefined ? res.hcp : '-'}</td>
+      <td style="${tdStyle('font-weight:700;color:#27ae60;font-size:12px;')}">${res.nett||'-'}</td>
+    </tr>`;
+  });
+
+  const holeHeaders = holes.map(n => `<th style="${thStyle()}">${n}</th>`).join('');
+
+  const printHtml = `<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8">
+<title>ROSS Scorecard - ${fmtDate(tanggal)}</title>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;padding:12px;color:#000;font-size:11px;}
+  @page{size:A4 landscape;margin:10mm;}
+  @media print{body{padding:0;}}
+  table{border-collapse:collapse;width:100%;}
+</style>
+</head><body>
+  <div style="text-align:center;margin-bottom:10px;border-bottom:2px solid #1a8a5a;padding-bottom:8px;">
+    <div style="font-size:18px;font-weight:700;color:#1a8a5a;">⛳ ROSS GOLF COURSE · ROSS SCORECARD</div>
+    <div style="font-size:11px;color:#555;margin-top:3px;">Lapangan Golf PT.Tolan Tiga Indonesia SS Region</div>
+    <div style="font-size:11px;color:#555;margin-top:2px;">
+      📅 ${fmtDate(tanggal)} &nbsp;·&nbsp; 🏌️ ${teeBox} &nbsp;·&nbsp; ${tipeMain === 'tournament' ? '🏆 Tournament' : '🏋️ Latihan'} &nbsp;·&nbsp; ${players.length} Pemain
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr style="background:#1a3d28;color:white;">
+        <th style="${thStyle('background:#1a3d28;color:white;width:24px;')}">No</th>
+        <th style="${thStyle('background:#1a3d28;color:white;text-align:left;padding-left:8px;min-width:120px;')}">Nama Golfer</th>
+        ${holeHeaders.replace(/style="[^"]*"/g, s => s.replace('background:#f0f0f0;color:#333;', 'background:#1a3d28;color:white;'))}
+        ${outInHeaders.replace(/style="[^"]*"/g, s => s.replace('background:#f0f0f0;color:#333;', 'background:#1a3d28;color:white;'))}
+        <th style="${thStyle('background:#1a3d28;color:#f5a623;')}">Gross</th>
+        <th style="${thStyle('background:#1a3d28;color:#9b59b6;')}">HCP</th>
+        <th style="${thStyle('background:#1a3d28;color:#2ecc71;')}">Nett</th>
+      </tr>
+      <tr style="background:#e8f4ee;">
+        <td style="${tdStyle('text-align:center;font-weight:700;color:#1a8a5a;')}">Par</td>
+        <td style="${tdStyle('text-align:left;padding-left:8px;color:#1a8a5a;font-weight:700;')}">Par Lapangan</td>
+        ${parRow}${outInPar}
+        <td style="${tdStyle('font-weight:700;color:#f5a623;')}">${parTot}</td>
+        <td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td>
+      </tr>
+      <tr style="background:#f0f8f4;">
+        <td style="${tdStyle('text-align:center;color:#1a8a5a;font-size:9px;')}">Jarak</td>
+        <td style="${tdStyle('text-align:left;padding-left:8px;color:#1a8a5a;font-size:9px;')}">Meter</td>
+        ${distRow}${outInDist}
+        <td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td>
+      </tr>
+    </thead>
+    <tbody>${playerRows}</tbody>
+  </table>
+  <div style="text-align:center;font-size:9px;color:#999;margin-top:10px;border-top:1px solid #eee;padding-top:6px;">
+    ROSS Scorecard · Lapangan Golf PT.Tolan Tiga Indonesia SS Region · Dicetak: ${new Date().toLocaleString('id-ID')}
+  </div>
+</body></html>`;
+
+  const w = window.open('', '_blank', 'width=1000,height=700');
+  if (!w) { showToast('⚠️ Popup diblokir browser. Izinkan popup lalu coba lagi.', 4000); return; }
+  w.document.write(printHtml);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 600);
+}
+
+function thStyle(extra) {
+  return `padding:4px 3px;border:1px solid #ccc;text-align:center;font-size:10px;background:#f0f0f0;color:#333;${extra||''}`;
+}
+function tdStyle(extra) {
+  return `padding:4px 3px;border:1px solid #ddd;text-align:center;font-size:11px;${extra||''}`;
+}
+
+// ── RECORD ───────────────────────────────────────────────
+async function loadRecord() {
+  const list = document.getElementById('recordList');
+  if (allRecords.length) { renderRecord(allRecords); return; }
+
+  list.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text2);">
+    <div class="spinner" style="margin:0 auto 12px;"></div>Memuat record...</div>`;
+
+  try {
+    const res  = await fetch(API_URL + '?action=getMasterData', { redirect:'follow' });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message);
+
+    const anggota = data.anggota || [];
+    allRecords = anggota
+      .filter(a => a.Nama)
+      .map(a => ({
+        nama:        a.Nama,
+        gelar:       (a['Gelar'] || '').trim(),
+        ou:          a['Operating Unit'] || '',
+        hcp:         (a.Handicap !== undefined && a.Handicap !== '') ? a.Handicap : '-',
+        totalRounds: a.TotalRounds || 0,
+        lastUpdate:  fmtLastUpdate(a.LastUpdate)
+      }))
+      .sort((a,b) => {
+        if (a.gelar !== b.gelar) return a.gelar.localeCompare(b.gelar);
+        return a.nama.localeCompare(b.nama);
+      });
+
+    renderRecord(allRecords);
+  } catch(e) {
+    list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--red);">❌ Gagal memuat: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function filterRecord() {
+  const q = document.getElementById('recordSearch').value.toLowerCase();
+  const filtered = allRecords.filter(r => r.nama.toLowerCase().includes(q));
+  renderRecord(filtered);
+}
+
+function renderRecord(records) {
+  const list = document.getElementById('recordList');
+  if (!records.length) {
+    list.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text2);">Tidak ditemukan</div>`;
+    return;
+  }
+
+  list.innerHTML = records.map((r, i) => {
+    const icon    = r.gelar === 'Mrs.' ? '👩' : '👨';
+    const hcpVal  = r.hcp !== '-' ? r.hcp : '-';
+    const rounds  = r.totalRounds || 0;
+    const lastUpd = r.lastUpdate || '-';
+    const ouBadge = r.ou ? `<span style="background:rgba(26,138,90,.12);border:1px solid var(--border);color:var(--teal2);font-size:10px;padding:2px 6px;border-radius:4px;">${escHtml(r.ou)}</span>` : '';
+    const key = encodeURIComponent(r.nama + '|' + r.gelar);
+
+    return `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;"
+      onclick="toggleDetail('det_${i}','${key}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">
+            ${icon} <span style="color:var(--text2);font-size:12px;">${escHtml(r.gelar)}</span> ${escHtml(r.nama)} ${ouBadge}
+          </div>
+          <div style="font-size:11px;color:var(--text2);">
+            ${rounds} round tournament
+            ${lastUpd !== '-' ? ' · Update: ' + lastUpd : ''}
+          </div>
+        </div>
+        <div style="text-align:center;margin-left:12px;">
+          <div style="font-size:22px;font-weight:700;color:var(--purple);">${hcpVal}</div>
+          <div style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">HCP</div>
+        </div>
+        <div style="color:var(--text2);font-size:16px;margin-left:8px;" id="arr_det_${i}">▼</div>
+      </div>
+      <div id="det_${i}" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px;" onclick="event.stopPropagation()">
+        <div style="font-size:11px;color:var(--text2);text-align:center;padding:8px;">⏳ Memuat history...</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let openDetailId = '';
+async function toggleDetail(detId, key) {
+  const det = document.getElementById(detId);
+  const arr = document.getElementById('arr_' + detId);
+  if (!det) return;
+
+  if (det.style.display !== 'none') {
+    det.style.display = 'none';
+    if (arr) arr.textContent = '▼';
+    openDetailId = '';
+    return;
+  }
+
+  if (openDetailId) {
+    const prev = document.getElementById(openDetailId);
+    const parr = document.getElementById('arr_' + openDetailId);
+    if (prev) prev.style.display = 'none';
+    if (parr) parr.textContent = '▼';
+  }
+
+  det.style.display = 'block';
+  if (arr) arr.textContent = '▲';
+  openDetailId = detId;
+
+  if (!key) return;
+
+  try {
+    const res    = await fetch(`${API_URL}?action=getPlayerStats&pemain=${key}`, { redirect:'follow' });
+    const result = await res.json();
+    if (result.status !== 'ok') throw new Error(result.message);
+
+    const history  = result.history || [];
+    const detCheck = document.getElementById(detId);
+    if (!detCheck) return;
+
+    if (!history.length) {
+      detCheck.innerHTML = `<div style="font-size:12px;color:var(--text2);text-align:center;padding:8px;">Belum ada history tournament</div>`;
+      return;
+    }
+
+    detCheck.innerHTML = history.map((h, hi) => {
+      const tipe    = h.type === 'tournament' ? '🏆' : '🏋️';
+      const gross   = h.gross      || '-';
+      const poin    = h.stableford || '-';
+      const hcp     = h.hcp !== undefined ? h.hcp : '-';
+      const nett    = h.nett       || '-';
+      const tgl     = h.tanggal ? h.tanggal.toString().split('T')[0] : '-';
+      const parts   = tgl.split('-');
+      const months  = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      const tglFmt  = parts.length === 3 ? `${parts[2]} ${months[parseInt(parts[1])-1]} ${parts[0]}` : tgl;
+      const teeBox  = h.teeBox || '';
+      const holesArr = teeBox === '1st Nine'   ? [1,2,3,4,5,6,7,8,9]
+                     : teeBox === '2nd Nine'   ? [10,11,12,13,14,15,16,17,18]
+                     : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
+
+      const holeCells = holesArr.map(n => {
+        const sc   = parseInt(h.holes?.['h'+n]) || 0;
+        const par  = PAR[n];
+        const diff = sc > 0 ? sc - par : null;
+        const color = diff === null ? 'var(--text2)'
+                    : diff <= -2   ? '#FFAB91'
+                    : diff === -1  ? '#69F0AE'
+                    : diff === 0   ? '#40C4FF'
+                    : diff === 1   ? '#B0BEC5' : '#FF1744';
+        return `<div style="text-align:center;min-width:24px;">
+          <div style="font-size:9px;color:var(--text2);">${n}</div>
+          <div style="font-size:13px;font-weight:700;color:${color};">${sc > 0 ? sc : '-'}</div>
+          <div style="font-size:8px;color:var(--teal2);">${par}</div>
+        </div>`;
+      }).join('');
+
+      return `
+      <div style="border-bottom:1px solid var(--border);padding:8px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;"
+          onclick="event.stopPropagation();toggleHoles(this);" data-holes-id="holes_${detId}_${hi}">
+          <div>
+            <span style="color:var(--text2);">${tipe} ${tglFmt}</span>
+            <span style="color:var(--teal2);margin-left:6px;">${teeBox}</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;text-align:center;">
+            <div><div style="font-weight:700;color:var(--gold);font-size:13px;">${gross}</div><div style="font-size:9px;color:var(--text2);">Gross</div></div>
+            <div><div style="font-weight:700;color:var(--purple);font-size:13px;">${poin}</div><div style="font-size:9px;color:var(--text2);">Poin</div></div>
+            <div><div style="font-weight:700;color:var(--text2);font-size:13px;">${hcp}</div><div style="font-size:9px;color:var(--text2);">HCP</div></div>
+            <div><div style="font-weight:700;color:var(--green);font-size:13px;">${nett}</div><div style="font-size:9px;color:var(--text2);">Nett</div></div>
+            <div style="color:var(--text2);font-size:12px;" id="arr_holes_${detId}_${hi}">▼</div>
+          </div>
+        </div>
+        <div id="holes_${detId}_${hi}" style="display:none;margin-top:8px;overflow-x:auto;" onclick="event.stopPropagation()">
+          <div style="display:flex;gap:6px;padding:6px 0;">${holeCells}</div>
+          <div style="font-size:9px;color:var(--text2);margin-top:4px;">🟠Eagle+ 🟢Birdie 🔵Par 🔘Bogey 🔴Double+</div>
+        </div>
+      </div>`;
+    }).join('') +
+    `<div style="font-size:11px;color:var(--text2);text-align:center;margin-top:8px;">${history.length} record</div>`;
+
+  } catch(e) {
+    const detErr = document.getElementById(detId);
+    if (detErr) detErr.innerHTML = `<div style="font-size:12px;color:var(--red);padding:8px;">❌ ${escHtml(e.message)}</div>`;
+  }
+}
+
+function toggleHoles(el) {
+  const id  = el.getAttribute('data-holes-id');
+  const box = document.getElementById(id);
+  const arr = document.getElementById('arr_' + id);
+  if (!box) return;
+  const isOpen = box.style.display !== 'none';
+  box.style.display  = isOpen ? 'none' : 'flex';
+  box.style.flexWrap = 'nowrap';
+  if (arr) arr.textContent = isOpen ? '▼' : '▲';
+}
+
+// ── HELPERS ──────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function resetApp() {
+  playerCount  = 0;
+  lastSaveData = null;
+  document.getElementById('playerList').innerHTML = '';
+  document.getElementById('addPlayerBtn').style.display = 'block';
+  document.getElementById('btnSave').disabled = false;
+  document.getElementById('btnSave').textContent = '💾 Simpan Score';
+  addPlayer();
+  showScreen('setup');
+}
+
+function range(a, b) {
+  const r = [];
+  for (let i = a; i <= b; i++) r.push(i);
+  return r;
+}
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function fmtLastUpdate(val) {
+  if (!val || val === 0 || val === '') return '-';
+  if (typeof val === 'number') {
+    const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+  }
+  return fmtDate(val.toString().split('T')[0]);
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const str   = d.toString();
+  const match = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return str;
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  return `${parseInt(match[3])} ${months[parseInt(match[2])-1]} ${match[1]}`;
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── CHAMPIONS ────────────────────────────────────────────
+let championsData = null;
+
+async function loadChampions() {
+  const list = document.getElementById('championsList');
+  list.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text2);">
+    <div class="spinner" style="margin:0 auto 12px;"></div>Memuat data...</div>`;
+
+  try {
+    const res  = await fetch(API_URL + '?action=getChampionsData', { redirect:'follow' });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message);
+    championsData = data;
+
+    const sel = document.getElementById('champTournament');
+    const trnMap = {};
+    (data.champions || []).forEach(c => {
+      if (c.TournamentName) trnMap[c.TournamentName] = c.Tanggal || '';
+    });
+    (data.specialAwards || []).forEach(s => {
+      if (s.TournamentName) trnMap[s.TournamentName] = trnMap[s.TournamentName] || s.Tanggal || '';
+    });
+    (data.tournamentPhotos || []).forEach(p => {
+      if (p.TournamentName) trnMap[p.TournamentName] = trnMap[p.TournamentName] || p.Tanggal || '';
+    });
+
+    const tournaments = Object.keys(trnMap).filter(Boolean);
+    sel.innerHTML = '<option value="">-- Pilih Tournament --</option>';
+    tournaments.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t;
+      const tgl = trnMap[t] ? ' - ' + fmtDate(trnMap[t].toString().split('T')[0]) : '';
+      o.textContent = t + tgl;
+      sel.appendChild(o);
+    });
+
+    if (tournaments.length) {
+      sel.value = tournaments[0];
+      renderChampions(tournaments[0]);
+    } else {
+      renderChampionsEmpty();
+    }
+
+  } catch(e) {
+    list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--red);">❌ Gagal memuat: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function filterChampions() {
+  const trn = document.getElementById('champTournament').value;
+  if (trn) renderChampions(trn);
+  else renderChampionsEmpty();
+}
+
+function renderChampionsEmpty() {
+  document.getElementById('championsList').innerHTML = `
+    <div style="text-align:center;padding:32px;color:var(--text2);">
+      <div style="font-size:36px;margin-bottom:12px;">🏆</div>
+      Pilih tournament untuk melihat data
+    </div>`;
+}
+
+const MEDALS = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+
+function renderChampions(trnName) {
+  if (!championsData) return;
+  const list = document.getElementById('championsList');
+
+  const champ  = (championsData.champions || []).find(c => c.TournamentName === trnName) || {};
+  const awards = (championsData.specialAwards || []).filter(s => s.TournamentName === trnName);
+  const photos = (championsData.tournamentPhotos || [])
+    .filter(p => p.TournamentName === trnName)
+    .sort((a,b) => (a.Urutan||0) - (b.Urutan||0));
+  const hoi = (championsData.holeInOne || []);
+
+  let html = '';
+
+  // GROSS
+  html += `<div class="sec-title">🏆 Gross Champion</div>`;
+  html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;">`;
+  let hasGross = false;
+  for (let i = 1; i <= 3; i++) {
+    const nama  = champ['Gross'+i+'Nama'];
+    const gelar = champ['Gross'+i+'Gelar'];
+    const score = champ['Gross'+i+'Score'];
+    if (!nama) continue;
+    hasGross = true;
+    const icon = (gelar||'') === 'Mrs.' ? '👩' : '👨';
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:18px;">${MEDALS[i-1]}</span>
+        <div style="font-size:13px;font-weight:700;color:var(--text);">${icon} ${escHtml(gelar||'')} ${escHtml(nama)}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:18px;font-weight:700;color:var(--gold);">${score||'-'}</div>
+        <div style="font-size:9px;color:var(--text2);">Gross</div>
+      </div>
+    </div>`;
+  }
+  if (!hasGross) html += `<div style="text-align:center;padding:12px;color:var(--text2);font-size:12px;">Belum ada data</div>`;
+  html += `</div>`;
+
+  // NETT
+  html += `<div class="sec-title">🎯 Nett Champion</div>`;
+  html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;">`;
+  let hasNett = false;
+  for (let i = 1; i <= 5; i++) {
+    const nama  = champ['Nett'+i+'Nama'];
+    const gelar = champ['Nett'+i+'Gelar'];
+    const score = champ['Nett'+i+'Score'];
+    if (!nama) continue;
+    hasNett = true;
+    const icon = (gelar||'') === 'Mrs.' ? '👩' : '👨';
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:18px;">${MEDALS[i-1]}</span>
+        <div style="font-size:13px;font-weight:700;color:var(--text);">${icon} ${escHtml(gelar||'')} ${escHtml(nama)}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:18px;font-weight:700;color:var(--green);">${score||'-'}</div>
+        <div style="font-size:9px;color:var(--text2);">Nett</div>
+      </div>
+    </div>`;
+  }
+  if (!hasNett) html += `<div style="text-align:center;padding:12px;color:var(--text2);font-size:12px;">Belum ada data</div>`;
+  html += `</div>`;
+
+  // SPECIAL AWARDS
+  const awardCategories = [
+    { key: 'NearestPin',   label: '📍 Nearest to Pin' },
+    { key: 'NearestLine',  label: '📏 Nearest to Line' },
+    { key: 'LongestDrive', label: '🏌️ Longest Drive' },
+    { key: 'BestBirdie',   label: '🐦 Best Birdie' }
+  ];
+
+  awardCategories.forEach(cat => {
+    const catAwards = awards.filter(a => a.Kategori === cat.key)
+      .sort((a,b) => (a.Posisi||0) - (b.Posisi||0));
+    if (!catAwards.length) return;
+    html += `<div class="sec-title">${cat.label}</div>`;
+    html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;">`;
+    catAwards.forEach(a => {
+      const icon = (a.Gelar||'') === 'Mrs.' ? '👩' : '👨';
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:16px;">${MEDALS[(a.Posisi||1)-1]||a.Posisi}</span>
+          <div style="font-size:12px;font-weight:700;color:var(--text);">${icon} ${escHtml(a.Gelar||'')} ${escHtml(a.Nama||'')}</div>
+        </div>
+        <div style="font-size:11px;color:var(--teal2);">${escHtml(a.Info||'')}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  // FOTO
+  if (photos.length) {
+    html += `<div class="sec-title">📸 Foto Tournament</div>`;
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">`;
+    photos.forEach(p => {
+      html += `<div style="border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+        <img src="${escHtml(p.URL||'')}" style="width:100%;height:90px;object-fit:cover;"
+          onerror="this.parentElement.style.display='none'">
+        ${p.NamaFoto ? `<div style="font-size:10px;color:var(--text2);padding:4px 6px;">${escHtml(p.NamaFoto)}</div>` : ''}
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // HOLE IN ONE
+  if (hoi.length) {
+    html += `<div class="sec-title">⛳ Hole in One Ever</div>`;
+    hoi.forEach(h => {
+      const icon = (h.Gelar||'') === 'Mrs.' ? '👩' : '👨';
+      const tgl  = h.Tanggal ? h.Tanggal.toString().split('T')[0] : '';
+      const parts = tgl.split('-');
+      const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      const tglFmt = parts.length===3 ? `${parts[2]} ${months[parseInt(parts[1])-1]} ${parts[0]}` : tgl;
+      html += `<div style="background:var(--bg2);border:1px solid var(--gold);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--gold);">${icon} ${escHtml(h.Gelar||'')} ${escHtml(h.Nama||'')}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px;">${tglFmt} · Hole ${h.Hole||'-'} · ${h.Jarak||'-'}m · ${h.TeeBox||'-'}</div>
+        </div>
+        ${h.Foto ? `<img src="${escHtml(h.Foto)}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'">` : '<span style="font-size:32px;">⛳</span>'}
+      </div>`;
+    });
+  }
+
+  list.innerHTML = html || `<div style="text-align:center;padding:32px;color:var(--text2);">Belum ada data untuk tournament ini</div>`;
+}
+
+function showToast(msg, dur) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.display = 'none'; }, dur || 2500);
+}
+</script>
+</body>
+</html>
