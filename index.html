@@ -389,14 +389,14 @@ function initSlideshow(photos) {
     slideTimer = setInterval(() => {
       slideIdx = (slideIdx + 1) % slidePhotos.length;
       showSlide(slideIdx);
-    }, 5000);
+    }, 2500);
   };
   preload.onerror = function() {
     showSlide(0);
     slideTimer = setInterval(() => {
       slideIdx = (slideIdx + 1) % slidePhotos.length;
       showSlide(slideIdx);
-    }, 5000);
+    }, 2500);
   };
   preload.src = photos[0].url;
 }
@@ -421,7 +421,7 @@ function goSlide(idx) {
   slideTimer = setInterval(() => {
     slideIdx = (slideIdx + 1) % slidePhotos.length;
     showSlide(slideIdx);
-  }, 5000);
+  }, 2500);
 }
 
 // ── TAB SWITCHING ────────────────────────────────────────
