@@ -223,6 +223,7 @@ td.row-lbl{text-align:left;padding-left:8px!important;font-size:11px;color:var(-
   <div id="tab-input"     class="sc-tab sc-tab-active" onclick="switchScTab('input')">⛳ Scorecard</div>
   <div id="tab-record"    class="sc-tab"               onclick="switchScTab('record')">📋 Record</div>
   <div id="tab-champions" class="sc-tab"               onclick="switchScTab('champions')">🏆 Champions</div>
+  <div id="tab-bydate"    class="sc-tab"               onclick="switchScTab('bydate')">📅 Tanggal</div>
 </div>
 
 <!-- ── SCREEN: SETUP ──────────────────────────────────── -->
@@ -336,6 +337,15 @@ td.row-lbl{text-align:left;padding-left:8px!important;font-size:11px;color:var(-
   </div>
 </div>
 
+<!-- ── SCREEN: BY DATE ──────────────────────────────────── -->
+<div id="screen-bydate" class="screen">
+  <div class="sec-title">Cetak Scorecard Per Tanggal</div>
+  <label>Pilih Tanggal Main</label>
+  <input type="date" id="byDateInput">
+  <button class="btn btn-primary" onclick="loadByDate()" style="margin-top:4px;">🔍 Tampilkan Flight</button>
+  <div id="byDateResult" style="margin-top:12px;"></div>
+</div>
+  
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbw3kg6NrQ6QfmoAk6MRBWqlUhv5dTDFXlxFTC54nrM_cTZmC0pQmi0oNN2ogcXsiSzdUw/exec';
 
@@ -426,7 +436,7 @@ function goSlide(idx) {
 
 // ── TAB SWITCHING ────────────────────────────────────────
 function switchScTab(name) {
-  ['input','record','champions'].forEach(t => {
+  ['input','record','champions','bydate'].forEach(t => {
     document.getElementById('tab-' + t)?.classList.remove('sc-tab-active');
   });
   document.getElementById('tab-' + name)?.classList.add('sc-tab-active');
@@ -437,6 +447,7 @@ function switchScTab(name) {
   });
   document.getElementById('screen-record').style.display = 'none';
   document.getElementById('screen-champions').style.display = 'none';
+  document.getElementById('screen-bydate').style.display = 'none';
 
   if (name === 'input') {
     const setupEl = document.getElementById('screen-setup');
@@ -449,6 +460,11 @@ function switchScTab(name) {
   } else if (name === 'champions') {
     document.getElementById('screen-champions').style.display = 'block';
     loadChampions();
+  } else if (name === 'bydate') {
+    document.getElementById('screen-bydate').style.display = 'block';
+    if (!document.getElementById('byDateInput').value) {
+      document.getElementById('byDateInput').value = todayStr();
+    }
   }
 }
 
@@ -1405,6 +1421,349 @@ function renderChampions(trnName) {
   list.innerHTML = html || `<div style="text-align:center;padding:32px;color:var(--text2);">Belum ada data untuk tournament ini</div>`;
 }
 
+// ── BY DATE (Cetak per tanggal) ──────────────────────────
+let byDateData = null;
+
+async function loadByDate() {
+  const tanggal = document.getElementById('byDateInput').value;
+  if (!tanggal) { showToast('⚠️ Pilih tanggal dulu'); return; }
+
+  const result = document.getElementById('byDateResult');
+  result.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text2);">
+    <div class="spinner" style="margin:0 auto 12px;"></div>Memuat data...</div>`;
+
+  try {
+    const res  = await fetch(`${API_URL}?action=getScoresByDate&tanggal=${encodeURIComponent(tanggal)}`, { redirect:'follow' });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message);
+
+    byDateData = data;
+    const flights = data.flights || [];
+
+    if (!flights.length) {
+      result.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text2);">
+        <div style="font-size:36px;margin-bottom:12px;">📅</div>
+        Tidak ada data pada ${fmtDate(tanggal)}</div>`;
+      return;
+    }
+
+    const totalPemain = flights.reduce((s,f) => s + f.pemain.length, 0);
+
+    let html = `<div class="info-bar">
+      <div>📅 <b>${fmtDate(tanggal)}</b></div>
+      <div>🚩 <b>${flights.length} flight</b></div>
+      <div>👥 <b>${totalPemain} pemain</b></div>
+    </div>`;
+
+    flights.forEach((f, fi) => {
+      const tipe = f.type === 'tournament' ? '🏆 Tournament' : '🏋️ Latihan';
+      const names = f.pemain.map(p => {
+        const icon = (p.gelar||'') === 'Mrs.' ? '👩' : '👨';
+        return `${icon} ${escHtml(p.gelar||'')} ${escHtml(p.pemain)}`;
+      }).join(', ');
+      html += `<div class="sum-card">
+        <div class="sum-name">🚩 Flight ${fi+1} · ${escHtml(f.teeBox)} · ${tipe}</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px;">${names}</div>
+        <button class="btn btn-outline" style="margin:0;padding:8px;font-size:12px;" onclick="printSingleFlight(${fi})">📄 Print Flight Ini (PDF)</button>
+      </div>`;
+    });
+
+    html += `<button class="btn btn-gold" onclick="printByDate()" style="margin-top:8px;">📄 Print Semua Flight (PDF)</button>`;
+    result.innerHTML = html;
+
+  } catch(e) {
+    result.innerHTML = `<div style="text-align:center;padding:24px;color:var(--red);">❌ Gagal memuat: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function printSingleFlight(idx) {
+  if (!byDateData || !byDateData.flights[idx]) { showToast('⚠️ Flight tidak ditemukan'); return; }
+
+  const tanggal = byDateData.tanggal;
+  const f       = byDateData.flights[idx];
+  const dist    = window._dist || {};
+  const tipe    = f.type === 'tournament' ? '🏆 Tournament' : '🏋️ Latihan';
+
+  const tableHtml = renderFlightTable(f, idx, dist);
+
+  const printHtml = `<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8">
+<title>ROSS Scorecard Flight ${idx+1} - ${fmtDate(tanggal)}</title>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;padding:12px;color:#000;font-size:11px;}
+  @page{size:A4 landscape;margin:10mm;}
+  @media print{body{padding:0;}}
+  table{border-collapse:collapse;width:100%;}
+</style>
+</head><body>
+  <div style="text-align:center;margin-bottom:12px;border-bottom:2px solid #1a8a5a;padding-bottom:8px;">
+    <div style="font-size:18px;font-weight:700;color:#1a8a5a;">⛳ ROSS GOLF COURSE · ROSS SCORECARD</div>
+    <div style="font-size:12px;color:#555;margin-top:3px;">
+      📅 ${fmtDate(tanggal)} &nbsp;·&nbsp; 🚩 Flight ${idx+1} &nbsp;·&nbsp; 🏌️ ${f.teeBox} &nbsp;·&nbsp; ${tipe} &nbsp;·&nbsp; ${f.pemain.length} Pemain
+    </div>
+  </div>
+  ${tableHtml}
+  <div style="text-align:center;font-size:9px;color:#999;margin-top:10px;border-top:1px solid #eee;padding-top:6px;">
+    ROSS Scorecard · Lapangan Golf SS Region · Dicetak: ${new Date().toLocaleString('id-ID')}
+  </div>
+</body></html>`;
+
+  const w = window.open('', '_blank', 'width=1000,height=700');
+  if (!w) { showToast('⚠️ Popup diblokir browser. Izinkan popup lalu coba lagi.', 4000); return; }
+  w.document.write(printHtml);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 600);
+}
+
+// Render satu tabel scorecard untuk satu flight (dipakai print single & gabungan)
+function renderFlightTable(f, idx, dist) {
+  dist = dist || (window._dist || {});
+  const teeBox = f.teeBox;
+  const holes  = teeBox === '1st Nine'  ? range(1,9)
+               : teeBox === '2nd Nine'  ? range(10,18)
+               : range(1,18);
+  const front  = holes.filter(h => h <= 9);
+  const back   = holes.filter(h => h >= 10);
+  const hasBoth = front.length > 0 && back.length > 0;
+
+  const parOut = front.reduce((s,n) => s+PAR[n], 0);
+  const parIn  = back.reduce((s,n) => s+PAR[n], 0);
+  const parTot = holes.reduce((s,n) => s+PAR[n], 0);
+
+  const holeHeaders = holes.map(n => `<th style="${thStyle('background:#1a3d28;color:white;')}">${n}</th>`).join('');
+  const outInHeaders = hasBoth
+    ? `<th style="${thStyle('background:#1a3d28;color:white;')}">Out</th><th style="${thStyle('background:#1a3d28;color:white;')}">In</th>`
+    : `<th style="${thStyle('background:#1a3d28;color:white;')}">${front.length?'Out':'In'}</th>`;
+
+  const parRow = holes.map(n => `<td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${PAR[n]}</td>`).join('');
+  const outInPar = hasBoth
+    ? `<td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${parOut}</td><td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${parIn}</td>`
+    : `<td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${front.length?parOut:parIn}</td>`;
+
+  const distRow = holes.map(n => {
+    const d = dist?.[n] || 0;
+    return `<td style="${tdStyle('color:#1a8a5a;font-size:9px;')}">${d ? d+'m' : '-'}</td>`;
+  }).join('');
+  const outInDist = hasBoth ? `<td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td>` : `<td style="${tdStyle()}">-</td>`;
+
+  let playerRows = '';
+  f.pemain.forEach((p, pi) => {
+    let out = 0, inS = 0;
+    const holeCells = holes.map(n => {
+      const score = parseInt(p.holes['h'+n]) || 0;
+      const par   = PAR[n];
+      const diff  = score > 0 ? score - par : null;
+      const color = diff === null ? '#555'
+                  : diff <= -2 ? '#E64A19'
+                  : diff === -1 ? '#2E7D32'
+                  : diff === 0 ? '#0277BD'
+                  : diff === 1 ? '#546E7A' : '#B71C1C';
+      if (score > 0) { if (n <= 9) out += score; else inS += score; }
+      return `<td style="${tdStyle('font-weight:700;font-size:12px;')}"><span style="color:${color};">${score > 0 ? score : '-'}</span></td>`;
+    }).join('');
+
+    const outInCells = hasBoth
+      ? `<td style="${tdStyle('font-weight:700;color:#555;')}">${out||'-'}</td><td style="${tdStyle('font-weight:700;color:#555;')}">${inS||'-'}</td>`
+      : `<td style="${tdStyle('font-weight:700;color:#555;')}">${front.length?(out||'-'):(inS||'-')}</td>`;
+
+    const rowBg = pi % 2 === 0 ? '#ffffff' : '#f8f9fa';
+    playerRows += `<tr style="background:${rowBg};">
+      <td style="${tdStyle('text-align:center;font-weight:700;')}">${pi+1}</td>
+      <td style="${tdStyle('text-align:left;padding-left:8px;white-space:nowrap;min-width:120px;')}">${p.gelar} ${p.pemain}</td>
+      ${holeCells}
+      ${outInCells}
+      <td style="${tdStyle('font-weight:700;color:#f5a623;font-size:12px;')}">${p.gross||'-'}</td>
+      <td style="${tdStyle('font-weight:700;color:#9b59b6;font-size:12px;')}">${p.hcp !== undefined ? p.hcp : '-'}</td>
+      <td style="${tdStyle('font-weight:700;color:#27ae60;font-size:12px;')}">${p.nett||'-'}</td>
+    </tr>`;
+  });
+
+  const tipe = f.type === 'tournament' ? '🏆 Tournament' : '🏋️ Latihan';
+  return `
+  <div style="${idx > 0 ? 'page-break-before:always;' : ''}margin-bottom:14px;">
+    <div style="font-size:13px;font-weight:700;color:#1a3d28;margin-bottom:6px;padding:4px 8px;background:#e8f4ee;border-left:4px solid #1a8a5a;">
+      🚩 Flight ${idx+1} · ${teeBox} · ${tipe} · ${f.pemain.length} pemain
+    </div>
+    <table>
+      <thead>
+        <tr style="background:#1a3d28;color:white;">
+          <th style="${thStyle('background:#1a3d28;color:white;width:24px;')}">No</th>
+          <th style="${thStyle('background:#1a3d28;color:white;text-align:left;padding-left:8px;min-width:120px;')}">Nama Golfer</th>
+          ${holeHeaders}${outInHeaders}
+          <th style="${thStyle('background:#1a3d28;color:#f5a623;')}">Gross</th>
+          <th style="${thStyle('background:#1a3d28;color:#9b59b6;')}">HCP</th>
+          <th style="${thStyle('background:#1a3d28;color:#2ecc71;')}">Nett</th>
+        </tr>
+        <tr style="background:#e8f4ee;">
+          <td style="${tdStyle('text-align:center;font-weight:700;color:#1a8a5a;')}">Par</td>
+          <td style="${tdStyle('text-align:left;padding-left:8px;color:#1a8a5a;font-weight:700;')}">Par Lapangan</td>
+          ${parRow}${outInPar}
+          <td style="${tdStyle('font-weight:700;color:#f5a623;')}">${parTot}</td>
+          <td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td>
+        </tr>
+        <tr style="background:#f0f8f4;">
+          <td style="${tdStyle('text-align:center;color:#1a8a5a;font-size:9px;')}">Jarak</td>
+          <td style="${tdStyle('text-align:left;padding-left:8px;color:#1a8a5a;font-size:9px;')}">Meter</td>
+          ${distRow}${outInDist}
+          <td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td>
+        </tr>
+      </thead>
+      <tbody>${playerRows}</tbody>
+    </table>
+  </div>`;
+}
+
+// Render tabel gabungan per tee box (banyak pemain dalam satu tabel)
+function renderTeeBoxTable(teeBox, pemainAll, dist, idx) {
+  dist = dist || (window._dist || {});
+  const holes  = teeBox === '1st Nine'  ? range(1,9)
+               : teeBox === '2nd Nine'  ? range(10,18)
+               : range(1,18);
+  const front  = holes.filter(h => h <= 9);
+  const back   = holes.filter(h => h >= 10);
+  const hasBoth = front.length > 0 && back.length > 0;
+
+  const parOut = front.reduce((s,n) => s+PAR[n], 0);
+  const parIn  = back.reduce((s,n) => s+PAR[n], 0);
+  const parTot = holes.reduce((s,n) => s+PAR[n], 0);
+
+  const holeHeaders = holes.map(n => `<th style="${thStyle('background:#1a3d28;color:white;')}">${n}</th>`).join('');
+  const outInHeaders = hasBoth
+    ? `<th style="${thStyle('background:#1a3d28;color:white;')}">Out</th><th style="${thStyle('background:#1a3d28;color:white;')}">In</th>`
+    : `<th style="${thStyle('background:#1a3d28;color:white;')}">${front.length?'Out':'In'}</th>`;
+
+  const parRow = holes.map(n => `<td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${PAR[n]}</td>`).join('');
+  const outInPar = hasBoth
+    ? `<td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${parOut}</td><td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${parIn}</td>`
+    : `<td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${front.length?parOut:parIn}</td>`;
+
+  const distRow = holes.map(n => {
+    const d = dist?.[n] || 0;
+    return `<td style="${tdStyle('color:#1a8a5a;font-size:9px;')}">${d ? d+'m' : '-'}</td>`;
+  }).join('');
+  const outInDist = hasBoth ? `<td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td>` : `<td style="${tdStyle()}">-</td>`;
+
+  let playerRows = '';
+  pemainAll.forEach((p, pi) => {
+    let out = 0, inS = 0;
+    const holeCells = holes.map(n => {
+      const score = parseInt(p.holes['h'+n]) || 0;
+      const par   = PAR[n];
+      const diff  = score > 0 ? score - par : null;
+      const color = diff === null ? '#555'
+                  : diff <= -2 ? '#E64A19'
+                  : diff === -1 ? '#2E7D32'
+                  : diff === 0 ? '#0277BD'
+                  : diff === 1 ? '#546E7A' : '#B71C1C';
+      if (score > 0) { if (n <= 9) out += score; else inS += score; }
+      return `<td style="${tdStyle('font-weight:700;font-size:12px;')}"><span style="color:${color};">${score > 0 ? score : '-'}</span></td>`;
+    }).join('');
+
+    const outInCells = hasBoth
+      ? `<td style="${tdStyle('font-weight:700;color:#555;')}">${out||'-'}</td><td style="${tdStyle('font-weight:700;color:#555;')}">${inS||'-'}</td>`
+      : `<td style="${tdStyle('font-weight:700;color:#555;')}">${front.length?(out||'-'):(inS||'-')}</td>`;
+
+    const rowBg = pi % 2 === 0 ? '#ffffff' : '#f8f9fa';
+    playerRows += `<tr style="background:${rowBg};">
+      <td style="${tdStyle('text-align:center;font-weight:700;')}">${pi+1}</td>
+      <td style="${tdStyle('text-align:left;padding-left:8px;white-space:nowrap;min-width:120px;')}">${p.gelar} ${p.pemain}</td>
+      ${holeCells}
+      ${outInCells}
+      <td style="${tdStyle('font-weight:700;color:#f5a623;font-size:12px;')}">${p.gross||'-'}</td>
+      <td style="${tdStyle('font-weight:700;color:#9b59b6;font-size:12px;')}">${p.hcp !== undefined ? p.hcp : '-'}</td>
+      <td style="${tdStyle('font-weight:700;color:#27ae60;font-size:12px;')}">${p.nett||'-'}</td>
+    </tr>`;
+  });
+
+  const teeBoxLabel = teeBox === '1st Nine' ? '1st Nine (Hole 1–9)' : teeBox === '2nd Nine' ? '2nd Nine (Hole 10–18)' : 'Full Round (18 Hole)';
+  return `
+  <div style="${idx > 0 ? 'page-break-before:always;' : ''}margin-bottom:14px;">
+    <div style="font-size:13px;font-weight:700;color:#1a3d28;margin-bottom:6px;padding:4px 8px;background:#e8f4ee;border-left:4px solid #1a8a5a;">
+      🏌️ Tee Box ${teeBoxLabel} · ${pemainAll.length} pemain
+    </div>
+    <table>
+      <thead>
+        <tr style="background:#1a3d28;color:white;">
+          <th style="${thStyle('background:#1a3d28;color:white;width:24px;')}">No</th>
+          <th style="${thStyle('background:#1a3d28;color:white;text-align:left;padding-left:8px;min-width:120px;')}">Nama Golfer</th>
+          ${holeHeaders}${outInHeaders}
+          <th style="${thStyle('background:#1a3d28;color:#f5a623;')}">Gross</th>
+          <th style="${thStyle('background:#1a3d28;color:#9b59b6;')}">HCP</th>
+          <th style="${thStyle('background:#1a3d28;color:#2ecc71;')}">Nett</th>
+        </tr>
+        <tr style="background:#e8f4ee;">
+          <td style="${tdStyle('text-align:center;font-weight:700;color:#1a8a5a;')}">Par</td>
+          <td style="${tdStyle('text-align:left;padding-left:8px;color:#1a8a5a;font-weight:700;')}">Par Lapangan</td>
+          ${parRow}${outInPar}
+          <td style="${tdStyle('font-weight:700;color:#f5a623;')}">${parTot}</td>
+          <td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td>
+        </tr>
+        <tr style="background:#f0f8f4;">
+          <td style="${tdStyle('text-align:center;color:#1a8a5a;font-size:9px;')}">Jarak</td>
+          <td style="${tdStyle('text-align:left;padding-left:8px;color:#1a8a5a;font-size:9px;')}">Meter</td>
+          ${distRow}${outInDist}
+          <td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td><td style="${tdStyle()}">-</td>
+        </tr>
+      </thead>
+      <tbody>${playerRows}</tbody>
+    </table>
+  </div>`;
+}
+
+function printByDate() {
+  if (!byDateData || !byDateData.flights.length) { showToast('⚠️ Tidak ada data'); return; }
+
+  const tanggal = byDateData.tanggal;
+  const flights = byDateData.flights;
+  const dist    = window._dist || {};
+  const totalPemain = flights.reduce((s,f) => s + f.pemain.length, 0);
+
+  // Kelompokkan semua pemain per tee box (urutan: 1st Nine, 2nd Nine, Full Round)
+  const teeOrder = ['1st Nine','2nd Nine','Full Round'];
+  const byTee = {};
+  flights.forEach(f => {
+    if (!byTee[f.teeBox]) byTee[f.teeBox] = [];
+    f.pemain.forEach(p => byTee[f.teeBox].push(p));
+  });
+
+  const teeUsed = teeOrder.filter(t => byTee[t] && byTee[t].length);
+  Object.keys(byTee).forEach(t => { if (teeUsed.indexOf(t) === -1) teeUsed.push(t); });
+
+  const teeTables = teeUsed.map((t, i) => renderTeeBoxTable(t, byTee[t], dist, i)).join('');
+
+  const printHtml = `<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8">
+<title>ROSS Scorecard - ${fmtDate(tanggal)}</title>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;padding:12px;color:#000;font-size:11px;}
+  @page{size:A4 landscape;margin:10mm;}
+  @media print{body{padding:0;}}
+  table{border-collapse:collapse;width:100%;}
+</style>
+</head><body>
+  <div style="text-align:center;margin-bottom:12px;border-bottom:2px solid #1a8a5a;padding-bottom:8px;">
+    <div style="font-size:18px;font-weight:700;color:#1a8a5a;">⛳ ROSS GOLF COURSE · ROSS SCORECARD</div>
+    <div style="font-size:12px;color:#555;margin-top:3px;">
+      📅 ${fmtDate(tanggal)} &nbsp;·&nbsp; 🚩 ${flights.length} Flight &nbsp;·&nbsp; 👥 ${totalPemain} Pemain
+    </div>
+  </div>
+  ${teeTables}
+  <div style="text-align:center;font-size:9px;color:#999;margin-top:10px;border-top:1px solid #eee;padding-top:6px;">
+    ROSS Scorecard · Lapangan Golf SS Region · Dicetak: ${new Date().toLocaleString('id-ID')}
+  </div>
+</body></html>`;
+
+  const w = window.open('', '_blank', 'width=1000,height=700');
+  if (!w) { showToast('⚠️ Popup diblokir browser. Izinkan popup lalu coba lagi.', 4000); return; }
+  w.document.write(printHtml);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 600);
+}
+  
 function showToast(msg, dur) {
   const t = document.getElementById('toast');
   t.textContent = msg;
