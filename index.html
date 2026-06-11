@@ -594,7 +594,17 @@ function getPlayers() {
       const opt   = sel.options[sel.selectedIndex];
       const hcp   = parseInt(opt.getAttribute('data-hcp')) || 0;
       const gelar = opt.getAttribute('data-gelar') || '';
-      players.push({ nama: sel.value, hcp, gelar });
+
+      // Ambil handicap tetap dari masterData (untuk mode Handicap)
+      const anggota = (masterData?.anggota || []).find(a =>
+        a.Nama === sel.value && (a['Gelar'] || '').trim() === gelar);
+      let hcpTetap = 0;
+      if (anggota) {
+        const ht = parseInt(anggota.HandicapTetap);
+        hcpTetap = isNaN(ht) ? 0 : ht;
+      }
+
+      players.push({ nama: sel.value, hcp, gelar, hcpTetap });
     }
   });
   return players;
@@ -665,6 +675,16 @@ function buildTable(players) {
   window._holes   = holes;
   window._teeBox  = teeBox;
   window._tanggal = tanggal;
+
+  // Tentukan mode perhitungan: hanya tournament yang bisa Handicap; latihan selalu System36
+  const tipeMain     = document.getElementById('tipePermainan').value;
+  const tournamentId = document.getElementById('tournamentId').value || '';
+  let mode = 'System36';
+  if (tipeMain === 'tournament' && tournamentId) {
+    const trn = (masterData?.tournaments || []).find(t => t.ID === tournamentId);
+    if (trn && trn.Mode === 'Handicap') mode = 'Handicap';
+  }
+  window._mode = mode;
 }
 
 function holeRow(n, players, dist) {
@@ -707,6 +727,8 @@ function recalc() {
   const parMax = holes.length === 18 ? 36 : 18;
   const front  = holes.filter(h => h <= 9);
   const back   = holes.filter(h => h >= 10);
+  const mode        = window._mode || 'System36';
+  const isNineHoles = (holes.length === 9);
 
   players.forEach((p, i) => {
     let gross = 0, poin = 0, out = 0, inS = 0;
@@ -722,12 +744,32 @@ function recalc() {
         if (inp) inp.className = '';
       }
     });
-    const hcp  = Math.max(0, parMax - poin);
-    const nett = gross > 0 ? gross - hcp : 0;
+
+    // HCP & Nett sesuai mode (identik dengan backend saveScore)
+    let hcp, nett;
+    if (mode === 'Handicap') {
+      const ht = parseInt(p.hcpTetap) || 0;
+      hcp  = isNineHoles ? Math.round(ht / 2) : ht;
+      nett = gross > 0 ? gross - hcp : 0;
+    } else {
+      hcp  = Math.max(0, parMax - poin);
+      nett = gross > 0 ? gross - hcp : 0;
+    }
+
     const set = (id, val) => { const el = document.getElementById(id+'_'+i); if(el) el.textContent = val > 0 ? val : '—'; };
     if (front.length) set('out', out);
     if (back.length)  set('in',  inS);
-    if (gross > 0) { set('total', gross); set('poin', poin); set('hcp', hcp); set('nett', nett); }
+    if (gross > 0) { set('total', gross); set('poin', poin); set('nett', nett); }
+
+    // HCP: di mode Handicap tampilkan handicap tetap walau gross belum ada;
+    // di System36 tampilkan hanya saat gross > 0 (seperti sebelumnya)
+    if (mode === 'Handicap') {
+      const elHcp = document.getElementById('hcp_' + i);
+      if (elHcp) elHcp.textContent = hcp;
+    } else if (gross > 0) {
+      const elHcp = document.getElementById('hcp_' + i);
+      if (elHcp) elHcp.textContent = hcp;
+    }
   });
 }
 
@@ -737,7 +779,9 @@ function showSummary() {
   const holes   = window._holes;
   if (!players || !holes) return;
 
-  const parMax = holes.length === 18 ? 36 : 18;
+  const parMax      = holes.length === 18 ? 36 : 18;
+  const mode        = window._mode || 'System36';
+  const isNineHoles = (holes.length === 9);
   let html = '', hasScore = false;
 
   players.forEach((p, i) => {
@@ -748,15 +792,27 @@ function showSummary() {
     });
     if (!gross) return;
     hasScore = true;
-    const hcp  = Math.max(0, parMax - poin);
-    const nett = gross - hcp;
+
+    // HCP & Nett sesuai mode (identik backend)
+    let hcp, nett;
+    if (mode === 'Handicap') {
+      const ht = parseInt(p.hcpTetap) || 0;
+      hcp  = isNineHoles ? Math.round(ht / 2) : ht;
+      nett = gross - hcp;
+    } else {
+      hcp  = Math.max(0, parMax - poin);
+      nett = gross - hcp;
+    }
+
+    const hcpLabel = mode === 'Handicap' ? 'Handicap Tetap' : 'Handicap';
+
     html += `
     <div class="sum-card">
       <div class="sum-name">🏌️ ${escHtml(p.gelar)} ${escHtml(p.nama)}</div>
       <div class="sum-grid">
         <div class="sum-item"><div class="sum-val" style="color:var(--gold);">${gross}</div><div class="sum-lbl">Gross Score</div></div>
         <div class="sum-item"><div class="sum-val" style="color:var(--purple);">${poin}</div><div class="sum-lbl">Stableford</div></div>
-        <div class="sum-item"><div class="sum-val" style="color:var(--text2);">${hcp}</div><div class="sum-lbl">Handicap</div></div>
+        <div class="sum-item"><div class="sum-val" style="color:var(--text2);">${hcp}</div><div class="sum-lbl">${hcpLabel}</div></div>
         <div class="sum-item"><div class="sum-val" style="color:var(--green);">${nett}</div><div class="sum-lbl">Nett Score</div></div>
       </div>
     </div>`;
@@ -795,12 +851,14 @@ async function saveScore() {
     const teeBox       = document.getElementById('teeBox').value;
     const tipeMain     = document.getElementById('tipePermainan').value;
     const tournamentId = document.getElementById('tournamentId').value || '';
+    const mode         = window._mode || 'System36';
 
     const payload = {
       action: 'saveScore',
       tanggal, teeBox,
       type: tipeMain,
       tournamentId,
+      mode,
       scores
     };
 
