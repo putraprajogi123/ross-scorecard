@@ -876,6 +876,7 @@ async function saveScore() {
 
     lastSaveData = {
       tanggal, teeBox, tipeMain, tournamentId,
+      mode:    window._mode || 'System36',
       players: window._players,
       holes:   window._holes,
       results: result.results,
@@ -912,7 +913,7 @@ async function saveScore() {
 function generatePDF() {
   if (!lastSaveData) { showToast('⚠️ Tidak ada data untuk di-print'); return; }
 
-  const { tanggal, teeBox, tipeMain, players, holes, results, scores, dist } = lastSaveData;
+  const { tanggal, teeBox, tipeMain, mode, players, holes, results, scores, dist } = lastSaveData;
 
   const parRow = holes.map(n => `<td style="${tdStyle('color:#1a8a5a;font-weight:700;')}">${PAR[n]}</td>`).join('');
   const front  = holes.filter(h => h <= 9);
@@ -994,7 +995,7 @@ function generatePDF() {
     <div style="font-size:18px;font-weight:700;color:#1a8a5a;">⛳ ROSS GOLF COURSE · ROSS SCORECARD</div>
     <div style="font-size:11px;color:#555;margin-top:3px;">Lapangan Golf SS Region</div>
     <div style="font-size:11px;color:#555;margin-top:2px;">
-      📅 ${fmtDate(tanggal)} &nbsp;·&nbsp; 🏌️ ${teeBox} &nbsp;·&nbsp; ${tipeMain === 'tournament' ? '🏆 Tournament' : '🏋️ Latihan'} &nbsp;·&nbsp; ${players.length} Pemain
+      📅 ${fmtDate(tanggal)} &nbsp;·&nbsp; 🏌️ ${teeBox} &nbsp;·&nbsp; ${tipeMain === 'tournament' ? '🏆 Tournament' : '🏋️ Latihan'} &nbsp;·&nbsp; ${players.length} Pemain &nbsp;·&nbsp; ${modeBadge(mode)}
     </div>
   </div>
   <table>
@@ -1024,6 +1025,7 @@ function generatePDF() {
     </thead>
     <tbody>${playerRows}</tbody>
   </table>
+  ${modeFootnote(mode === 'Handicap')}
   <div style="text-align:center;font-size:9px;color:#999;margin-top:10px;border-top:1px solid #eee;padding-top:6px;">
     ROSS Scorecard · Lapangan Golf SS Region · Dicetak: ${new Date().toLocaleString('id-ID')}
   </div>
@@ -1043,7 +1045,19 @@ function thStyle(extra) {
 function tdStyle(extra) {
   return `padding:4px 3px;border:1px solid #ddd;text-align:center;font-size:11px;${extra||''}`;
 }
+// Badge teks mode untuk header printout
+function modeBadge(mode) {
+  return mode === 'Handicap' ? '🎯 System Handicap (HCP Tetap)' : '⚙️ System 36';
+}
 
+// Footnote penjelasan (muncul kalau ada flight mode Handicap)
+function modeFootnote(adaHandicap) {
+  if (!adaHandicap) return '';
+  return `<div style="margin-top:10px;padding:8px 10px;background:#fff8e8;border-left:4px solid #f5a623;font-size:10px;color:#555;">
+    <b>Catatan:</b> Flight dengan System Handicap menghitung Nett = Gross − Handicap Tetap pemain. Kolom Poin (Stableford) hanya sebagai informasi.
+  </div>`;
+}
+  
 // ── RECORD ───────────────────────────────────────────────
 async function loadRecord() {
   const list = document.getElementById('recordList');
@@ -1545,6 +1559,7 @@ function printSingleFlight(idx) {
   const f       = byDateData.flights[idx];
   const dist    = window._dist || {};
   const tipe    = f.type === 'tournament' ? '🏆 Tournament' : '🏋️ Latihan';
+  const flightMode = f.mode || 'System36';
 
   const tableHtml = renderFlightTable(f, idx, dist);
 
@@ -1562,10 +1577,11 @@ function printSingleFlight(idx) {
   <div style="text-align:center;margin-bottom:12px;border-bottom:2px solid #1a8a5a;padding-bottom:8px;">
     <div style="font-size:18px;font-weight:700;color:#1a8a5a;">⛳ ROSS GOLF COURSE · ROSS SCORECARD</div>
     <div style="font-size:12px;color:#555;margin-top:3px;">
-      📅 ${fmtDate(tanggal)} &nbsp;·&nbsp; 🚩 Flight ${idx+1} &nbsp;·&nbsp; 🏌️ ${f.teeBox} &nbsp;·&nbsp; ${tipe} &nbsp;·&nbsp; ${f.pemain.length} Pemain
+      📅 ${fmtDate(tanggal)} &nbsp;·&nbsp; 🚩 Flight ${idx+1} &nbsp;·&nbsp; 🏌️ ${f.teeBox} &nbsp;·&nbsp; ${tipe} &nbsp;·&nbsp; ${f.pemain.length} Pemain &nbsp;·&nbsp; ${modeBadge(flightMode)}
     </div>
   </div>
   ${tableHtml}
+  ${modeFootnote(flightMode === 'Handicap')}
   <div style="text-align:center;font-size:9px;color:#999;margin-top:10px;border-top:1px solid #eee;padding-top:6px;">
     ROSS Scorecard · Lapangan Golf SS Region · Dicetak: ${new Date().toLocaleString('id-ID')}
   </div>
@@ -1643,10 +1659,11 @@ function renderFlightTable(f, idx, dist) {
   });
 
   const tipe = f.type === 'tournament' ? '🏆 Tournament' : '🏋️ Latihan';
+  const flightMode = f.mode || 'System36';
   return `
   <div style="${idx > 0 ? 'page-break-before:always;' : ''}margin-bottom:14px;">
     <div style="font-size:13px;font-weight:700;color:#1a3d28;margin-bottom:6px;padding:4px 8px;background:#e8f4ee;border-left:4px solid #1a8a5a;">
-      🚩 Flight ${idx+1} · ${teeBox} · ${tipe} · ${f.pemain.length} pemain
+      🚩 Flight ${idx+1} · ${teeBox} · ${tipe} · ${f.pemain.length} pemain · ${modeBadge(flightMode)}
     </div>
     <table>
       <thead>
@@ -1794,6 +1811,9 @@ function printByDate() {
   Object.keys(byTee).forEach(t => { if (teeUsed.indexOf(t) === -1) teeUsed.push(t); });
 
   const teeTables = teeUsed.map((t, i) => renderTeeBoxTable(t, byTee[t], dist, i)).join('');
+  
+  // Deteksi: ada minimal satu flight mode Handicap di tanggal ini?
+  const adaHandicap = flights.some(f => (f.mode || 'System36') === 'Handicap');
 
   const printHtml = `<!DOCTYPE html>
 <html lang="id"><head><meta charset="UTF-8">
@@ -1813,6 +1833,7 @@ function printByDate() {
     </div>
   </div>
   ${teeTables}
+  ${modeFootnote(adaHandicap)}
   <div style="text-align:center;font-size:9px;color:#999;margin-top:10px;border-top:1px solid #eee;padding-top:6px;">
     ROSS Scorecard · Lapangan Golf SS Region · Dicetak: ${new Date().toLocaleString('id-ID')}
   </div>
