@@ -212,9 +212,9 @@ body::before{
 <div class="refresh-bar"><div class="refresh-progress" id="refreshBar"></div></div>
 
 <!-- MAIN -->
-<div class="main">
+<div class="main" id="mainGrid">
   <!-- GROSS -->
-  <div class="panel">
+  <div class="panel" id="panelGross">
     <div class="panel-hdr">
       <div>
         <div class="panel-title gross">🏆 Gross Score</div>
@@ -228,11 +228,11 @@ body::before{
   </div>
 
   <!-- NETT -->
-  <div class="panel">
+  <div class="panel" id="panelNett">
     <div class="panel-hdr">
       <div>
         <div class="panel-title nett">🎯 Nett Score</div>
-        <div class="panel-sub">Gross − Handicap</div>
+        <div class="panel-sub" id="nettSub">Gross − Handicap</div>
       </div>
       <div class="panel-count" id="nettCount"></div>
     </div>
@@ -241,7 +241,6 @@ body::before{
     </div>
   </div>
 </div>
-
 <div class="last-update" id="lastUpdate"></div>
 <div style="text-align:center;padding:6px;">
   <button id="btnPrintScore" onclick="printTournamentScore()"
@@ -339,6 +338,24 @@ async function loadData() {
   }
 }
 
+function applyModeLayout(isHandicap) {
+  const grid       = document.getElementById('mainGrid');
+  const panelGross = document.getElementById('panelGross');
+  const nettSub    = document.getElementById('nettSub');
+
+  if (isHandicap) {
+    // Mode Handicap: sembunyikan panel Gross, panel Nett full-width
+    if (panelGross) panelGross.style.display = 'none';
+    if (grid) grid.style.gridTemplateColumns = '1fr';
+    if (nettSub) nettSub.textContent = '🎯 System Handicap · Nett = Gross − Handicap Tetap';
+  } else {
+    // Mode System 36 / All Rounds: dua panel seperti biasa
+    if (panelGross) panelGross.style.display = '';
+    if (grid) grid.style.gridTemplateColumns = '';
+    if (nettSub) nettSub.textContent = 'Gross − Handicap';
+  }
+}
+        
 function updateHeader() {
   if (tournamentData) {
     document.getElementById('trnName').textContent = tournamentData.Nama || 'ROSS Tournament';
@@ -348,6 +365,10 @@ function updateHeader() {
     const tgl    = tournamentData.Tanggal ? fmtDateStr(tournamentData.Tanggal) : '';
     document.getElementById('trnMeta').textContent =
       [region, teeBox, gender, tgl].filter(Boolean).join(' · ');
+
+    // Mode tournament: Handicap → tampilkan panel Nett saja
+    const isHandicap = tournamentData.Mode === 'Handicap';
+    applyModeLayout(isHandicap);
 
     isFinished = tournamentData.Status === 'SELESAI';
 
@@ -366,6 +387,7 @@ function updateHeader() {
   } else {
     document.getElementById('trnName').textContent = 'All Rounds';
     document.getElementById('trnMeta').textContent = 'Semua data latihan & tournament';
+    applyModeLayout(false); // All Rounds → dua panel seperti biasa
   }
 }
 
