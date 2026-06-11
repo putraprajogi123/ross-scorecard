@@ -228,7 +228,20 @@ td.row-lbl{text-align:left;padding-left:8px!important;font-size:11px;color:var(-
 
 <!-- ── SCREEN: SETUP ──────────────────────────────────── -->
 <div id="screen-setup" class="screen active">
-  <div class="sec-title">Tanggal & Tipe</div>
+  <div class="sec-title">Tipe & Jadwal</div>
+
+  <label>Tipe Permainan</label>
+  <select id="tipePermainan" onchange="toggleTournament()">
+    <option value="latihan">🏋️ Latihan</option>
+    <option value="tournament">🏆 Tournament</option>
+  </select>
+
+  <div id="trn-section" style="display:none;">
+    <label>Pilih Tournament Aktif</label>
+    <select id="tournamentId" onchange="onTournamentChange()">
+      <option value="">-- Pilih Tournament --</option>
+    </select>
+  </div>
 
   <label>Tanggal Main</label>
   <input type="date" id="tanggal">
@@ -239,19 +252,6 @@ td.row-lbl{text-align:left;padding-left:8px!important;font-size:11px;color:var(-
     <option value="2nd Nine">⬤ 2nd Nine — Hole 10–18</option>
     <option value="Full Round">⬤ Full Round — 18 Hole</option>
   </select>
-
-  <label>Tipe Permainan</label>
-  <select id="tipePermainan" onchange="toggleTournament()">
-    <option value="latihan">🏋️ Latihan</option>
-    <option value="tournament">🏆 Tournament</option>
-  </select>
-
-  <div id="trn-section" style="display:none;">
-    <label>Pilih Tournament Aktif</label>
-    <select id="tournamentId">
-      <option value="">-- Pilih Tournament --</option>
-    </select>
-  </div>
 
   <div class="sec-title">Kategori Pemain</div>
   <div style="display:flex;gap:8px;margin-bottom:14px;">
@@ -542,6 +542,57 @@ function populateTournaments() {
 function toggleTournament() {
   const isTrn = document.getElementById('tipePermainan').value === 'tournament';
   document.getElementById('trn-section').style.display = isTrn ? 'block' : 'none';
+
+  if (isTrn) {
+    // Saat masuk mode tournament, terapkan auto-isi dari tournament terpilih (kalau ada)
+    onTournamentChange();
+  } else {
+    // Latihan: buka kunci tanggal & tee box, kembalikan ke normal
+    unlockJadwal();
+  }
+}
+
+// Auto-isi tanggal & tee box dari tournament terpilih, lalu kunci
+function onTournamentChange() {
+  const tournamentId = document.getElementById('tournamentId').value;
+  const tglEl = document.getElementById('tanggal');
+  const teeEl = document.getElementById('teeBox');
+
+  if (!tournamentId) {
+    // Belum pilih tournament: biarkan terbuka (belum terkunci)
+    unlockJadwal();
+    return;
+  }
+
+  const trn = (masterData?.tournaments || []).find(t => t.ID === tournamentId);
+  if (!trn) { unlockJadwal(); return; }
+
+  // Isi tanggal dari tournament (ambil bagian yyyy-MM-dd)
+  if (trn.Tanggal) {
+    const tgl = trn.Tanggal.toString().split('T')[0];
+    tglEl.value = tgl;
+  }
+
+  // Isi tee box dari tournament
+  if (trn.TeeBox) {
+    teeEl.value = trn.TeeBox;
+  }
+
+  // Kunci keduanya (ditentukan panitia)
+  tglEl.disabled = true;
+  teeEl.disabled = true;
+  tglEl.style.opacity = '0.6';
+  teeEl.style.opacity = '0.6';
+}
+
+// Buka kunci tanggal & tee box (mode latihan / belum pilih tournament)
+function unlockJadwal() {
+  const tglEl = document.getElementById('tanggal');
+  const teeEl = document.getElementById('teeBox');
+  tglEl.disabled = false;
+  teeEl.disabled = false;
+  tglEl.style.opacity = '1';
+  teeEl.style.opacity = '1';
 }
 
 // ── PLAYER MANAGEMENT ────────────────────────────────────
@@ -1266,6 +1317,14 @@ function resetApp() {
   document.getElementById('addPlayerBtn').style.display = 'block';
   document.getElementById('btnSave').disabled = false;
   document.getElementById('btnSave').textContent = '💾 Simpan Score';
+
+  // Kembalikan ke kondisi awal: tipe latihan, jadwal terbuka
+  document.getElementById('tipePermainan').value = 'latihan';
+  document.getElementById('tournamentId').value = '';
+  document.getElementById('trn-section').style.display = 'none';
+  unlockJadwal();
+  document.getElementById('tanggal').value = todayStr();
+
   addPlayer();
   showScreen('setup');
 }
