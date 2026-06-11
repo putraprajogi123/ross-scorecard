@@ -575,6 +575,9 @@ async function printTournamentScore() {
 
     if (!scores.length) { alert('Belum ada score untuk tournament ini'); btn.textContent = '📄 Print Score'; btn.disabled = false; return; }
 
+    // Mode tournament (satu tournament = satu mode); ambil dari score pertama
+    const trnMode = scores[0].mode || 'System36';
+
     const PAR_P = {
       1:4, 2:4, 3:3, 4:4, 5:4, 6:5, 7:4, 8:5, 9:3,
       10:4,11:4,12:3,13:4,14:4,15:5,16:4,17:5,18:3
@@ -651,7 +654,7 @@ async function printTournamentScore() {
     <div style="font-size:10px;color:#555;margin-top:2px;">Lapangan Golf SS Region</div>
     <div style="font-size:10px;font-weight:700;color:#333;margin-top:2px;">${trn.Nama}</div>
     <div style="font-size:9px;color:#555;margin-top:2px;">
-      📅 ${fmtDateStr(trn.Tanggal)} &nbsp;·&nbsp; 🏌️ ${teeBox} &nbsp;·&nbsp; 👥 ${scores.length} Peserta &nbsp;·&nbsp; 🌍 ${trn.Region}
+      📅 ${fmtDateStr(trn.Tanggal)} &nbsp;·&nbsp; 🏌️ ${teeBox} &nbsp;·&nbsp; 👥 ${scores.length} Peserta &nbsp;·&nbsp; 🌍 ${trn.Region} &nbsp;·&nbsp; ${modeBadge(trnMode)}
     </div>
   </div>
   <table>
@@ -681,6 +684,7 @@ async function printTournamentScore() {
     </thead>
     <tbody>${playerRows}</tbody>
   </table>
+  ${modeFootnote(trnMode === 'Handicap')}
   <div style="text-align:center;font-size:8px;color:#999;margin-top:8px;border-top:1px solid #eee;padding-top:4px;">
     ROSS Scorecard · Lapangan Golf SS Region · Dicetak: ${new Date().toLocaleString('id-ID')}
   </div>
@@ -701,6 +705,17 @@ async function printTournamentScore() {
   btn.disabled    = false;
 }
 
+function modeBadge(mode) {
+  return mode === 'Handicap' ? '🎯 System Handicap (HCP Tetap)' : '⚙️ System 36';
+}
+
+function modeFootnote(adaHandicap) {
+  if (!adaHandicap) return '';
+  return `<div style="margin-top:8px;padding:6px 10px;background:#fff8e8;border-left:4px solid #f5a623;font-size:9px;color:#555;">
+    <b>Catatan:</b> Tournament dengan System Handicap menghitung Nett = Gross − Handicap Tetap pemain. Kolom Poin (Stableford) hanya sebagai informasi.
+  </div>`;
+}
+  
 function fmtDateStr(d) {
   if (!d) return '';
   const s = d.toString().split('T')[0];
