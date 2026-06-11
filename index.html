@@ -685,6 +685,10 @@ function buildTable(players) {
     if (trn && trn.Mode === 'Handicap') mode = 'Handicap';
   }
   window._mode = mode;
+
+  // Panggil recalc sekali agar HCP tetap langsung tampil (mode Handicap),
+  // walau skor belum diisi
+  recalc();
 }
 
 function holeRow(n, players, dist) {
